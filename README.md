@@ -13,7 +13,7 @@ Ce projet est un "travail en cours", voici les étapes envisagées, celles barr�
 
 1. ~~Créer un projet de base ESP32 Arduino~~
 2. ~~Permettre une configuration du module en mode "Point d'accès temporaire"~~
-3. Lire les données Open-Meteo toutes les 60 minutes
+3. ~~Lire les données Open-Meteo toutes les 60 minutes~~
 4. Mettre en forme ces données pour créer un message POCSAG
 5. Emettre ce message au bon format
 
@@ -52,3 +52,15 @@ flatc --cpp  --scoped-enums --gen-all --no-emit-min-max-enum-values -o ../includ
 ```
 
 Assurez-vous d'avoir la même version de flatc.exe que celle utilisée par le projet et indiquée dans `platform.io`
+
+## Utilisation
+
+Au lancement, un point d'accès wifi est mis à disposition, nommé CelebWeather auquel vous pouvez vous connecter avec le mot de passe ESP32CelebWeather
+
+Accédez à la page de configuration sur http://192.168.1.41/config
+
+Il faut alors modifier le mot de passe du portail (AP password) puis donner les éléments pour se connecter à votre réseau WiFi
+
+Par ailleurs, à la section "General parameters", renseignez la latitude et la longitude pour laquelle vous voulez les prévisions. Attention, il faut utiliser le point comme séparateur décimal
+
+La section "Open-Meteo parameters" contient des valeurs par défaut qui suffisent pour 99% des utilisateurs, ne la modifiez que si vous savez ce que vous faites.
