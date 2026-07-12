@@ -29,12 +29,16 @@ namespace CelebWeather
 
         IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
 
-        auto ntpServerName = iotwebconf::TextParameter("NTP server", "ntpServer", Config::NTPServerName, sizeof(Config::NTPServerName));
+        auto ntpServerName = iotwebconf::TextParameter("NTP server", "ntpServer", Config::NTPServerName, sizeof(Config::NTPServerName), Config::NTPServerName);
+
+        auto generalParametersGroup = iotwebconf::ParameterGroup("general", "General parameters");
+        auto latitude = iotwebconf::TextParameter("Latitude", "latitude", Config::Latitude, sizeof(Config::Latitude), Config::Latitude);
+        auto longitude = iotwebconf::TextParameter("Longitude", "longitude", Config::Longitude, sizeof(Config::Longitude), Config::Longitude);
+        auto timezone = iotwebconf::TextParameter("Time zone", "timezone", Config::Timezone, sizeof(Config::Timezone), Config::Timezone);
 
         auto openMeteoGroup = iotwebconf::ParameterGroup("openMeteo", "Open-Meteo parameters");
-        auto openMeteoServerName = iotwebconf::TextParameter("Base URI", "openMeteoServerName", Config::OpenMeteoBaseURI, sizeof(Config::OpenMeteoBaseURI));
-        auto openMeteoApiKey = iotwebconf::TextParameter("API Key", "openMeteoApiKey", Config::OpenMeteoAPIKey, sizeof(Config::OpenMeteoAPIKey));
-        //auto alarmItemName = iotwebconf::TextParameter("Alarm item name", "alarmItemName", Config::AlarmItemName, sizeof(Config::AlarmItemName), "Alarm");
+        auto openMeteoServerName = iotwebconf::TextParameter("Base URI", "openMeteoServerName", Config::OpenMeteoBaseURI, sizeof(Config::OpenMeteoBaseURI), Config::OpenMeteoBaseURI);
+        auto openMeteoApiKey = iotwebconf::TextParameter("API Key", "openMeteoApiKey", Config::OpenMeteoAPIKey, sizeof(Config::OpenMeteoAPIKey), Config::OpenMeteoAPIKey);
 
         void setup()
         {
@@ -42,10 +46,13 @@ namespace CelebWeather
             iotWebConf.getApTimeoutParameter()->visible = true;
             iotWebConf.addSystemParameter(&ntpServerName);
 
+            generalParametersGroup.addItem(&latitude);
+            generalParametersGroup.addItem(&longitude);
+            generalParametersGroup.addItem(&timezone);
+            iotWebConf.addParameterGroup(&generalParametersGroup);
+
             openMeteoGroup.addItem(&openMeteoServerName);
             openMeteoGroup.addItem(&openMeteoApiKey);
-            //openMeteoGroup.addItem(&alarmItemName);
-
             iotWebConf.addParameterGroup(&openMeteoGroup);
 
             iotWebConf.setConfigSavedCallback(&configSaved);
