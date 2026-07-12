@@ -39,3 +39,16 @@ Les connexions sont les suivantes:
 |  27   | DIO3  |
 
 26 et 27 ne sont probablement pas utiles mais repris d'un montage pour [RFLink32](https://github.com/cpainchaud/RFLink32)
+
+## Développement
+
+### FlatBuffers
+
+La communication avec Open-Meteo se fait via le format flatbuffers pour diminuer fortement le besoin en RAM et en CPU que le JSON nécessiterait.
+Il faut donc générer le fichier `weather_api_generated.h` via cette ligne de commande lancée dans le répertoire `open-meteo-flatbuffers`:
+
+```
+flatc --cpp  --scoped-enums --gen-all --no-emit-min-max-enum-values -o ../include weather_api.fbs
+```
+
+Assurez-vous d'avoir la même version de flatc.exe que celle utilisée par le projet et indiquée dans `platform.io`
