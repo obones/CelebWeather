@@ -11,8 +11,8 @@ Open-Meteo ---> ESP32 ---> RFM69 ---> Station
 Ce projet est un "travail en cours", voici les étapes envisagées, celles barrées sont déjà faites:
 
 
-1. Créer un projet de base ESP32 Arduino
-2. Permettre une configuration du module en mode "Point d'accès temporaire"
+1. ~~Créer un projet de base ESP32 Arduino~~
+2. ~~Permettre une configuration du module en mode "Point d'accès temporaire"~~
 3. Lire les données Open-Meteo toutes les 60 minutes
 4. Mettre en forme ces données pour créer un message POCSAG
 5. Emettre ce message au bon format
