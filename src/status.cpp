@@ -7,12 +7,13 @@
  Portions created by Olivier Sannier are Copyright (C) of Olivier Sannier. All rights reserved.
 */
 #include <Arduino.h>
-/*#include <esp32HTTPrequest.h>
-#include <ArduinoJson.h>
-#include <base64.h>*/
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <MemoryStream.h>
 
 #include "status.h"
 #include "config.h"
+#include "weather_api_generated.h"
 
 namespace CelebWeather
 {
@@ -29,115 +30,68 @@ namespace CelebWeather
             }
         }
 
-/*        typedef void (*responseTextCallback)(String&);
-
-        void requestReadyStateChange(void* optParm, esp32HTTPrequest* request, int readyState)
-        {
-            if (readyState == 4)
-            {
-                request->setDebug(false);
-
-                String responseText = request->responseText();
-
-                if (request->responseHTTPcode() == 200)
-                {
-                    if (optParm)
-                    {
-                        auto callback = (responseTextCallback)optParm;
-                        callback(responseText);
-                    }
-                }
-                else
-                {
-                    Serial.printf("Request failed: %d\r\n", request->responseHTTPcode());
-                    Serial.println(responseText);
-                }
-            }
-        }
-
-        void prepareRequest(esp32HTTPrequest& request, const char* method, responseTextCallback callback)
-        {
-            String url = "http://";
-            url += Config::OpenHabServerName;
-            url += "/rest/items/";
-            url += Config::AlarmItemName;
-
-            request.setDebug(false);
-            request.onReadyStateChange(requestReadyStateChange, (void*)callback);
-            request.open(method, url.c_str());
-            request.setReqHeader("accept", "application/json");
-            request.setReqHeader("Content-Type", "text/plain");
-            if (Config::OpenHabAPIKey[0] != 0)
-            {
-                String userId = Config::OpenHabAPIKey;
-                userId += ":";
-                userId = base64::encode(userId);
-                userId = "Basic " + userId;
-                request.setReqHeader("Authorization", userId.c_str());
-            }
-        }
-
-        void itemRetrievalCallback(String& responseText)
-        {
-            StaticJsonDocument<512> doc;
-            DeserializationError error = deserializeJson(doc, responseText);
-            if (error)
-            {
-                Serial.print(F("Failed to read response:"));
-                Serial.println(error.f_str());
-                Serial.println(responseText);
-            }
-            else
-            {
-                auto root = doc.as<JsonObject>();
-                AlarmState = root["state"].as<String>();
-                Serial.print("State is ");
-                Serial.println(AlarmState);
-
-                if (AlarmState == "ON")
-                {
-                    digitalWrite(ALARM_ON_LED_PIN, LED_ON);
-                    digitalWrite(ALARM_OFF_LED_PIN, LED_OFF);
-                }
-                else if (AlarmState == "OFF")
-                {
-                    digitalWrite(ALARM_ON_LED_PIN, LED_OFF);
-                    digitalWrite(ALARM_OFF_LED_PIN, LED_ON);
-                }
-                else
-                {
-                    digitalWrite(ALARM_ON_LED_PIN, LED_OFF);
-                    digitalWrite(ALARM_OFF_LED_PIN, LED_OFF);
-                }
-            }
-        }
-
-        void setAlarmStateCallback(String& responseText)
-        {
-            MustRefreshAlarmState = true;
-        }
-
-        void setAlarmState(const char* state)
-        {
-            esp32HTTPrequest request;
-            prepareRequest(request, "POST", setAlarmStateCallback);
-            request.send(state);
-        }*/
-
         void loop()
         {
             static unsigned long previousMillis = 0;
-            if (Connected && ((millis() - previousMillis > Config::RefreshPeriod * 1000)))
+            static bool forceRefresh = true;
+            if (Connected && ((millis() - previousMillis > Config::RefreshPeriodSeconds * 1000) || forceRefresh))
             {
                 previousMillis = millis();
 
                 if (Config::OpenMeteoBaseURI[0] != 0)
                 {
+                    forceRefresh = false;
                     Serial.println("Retrieving Open-Meteo forecast");
 
-                    /*esp32HTTPrequest request;
-                    prepareRequest(request, "GET", itemRetrievalCallback);
-                    request.send();*/
+                    WiFiClient wifiClient;   // wifi client object
+                    wifiClient.stop(); // close connection before sending a new request
+                    HTTPClient http;
+                    http.setTimeout(15000);
+                    http.setConnectTimeout(15000);
+
+                    String uriTimeZone = Config::Timezone;
+                    uriTimeZone.replace("/", "%2F");
+
+                    String uri =
+                        String(Config::OpenMeteoBaseURI) +
+                        "forecast" +
+                        "?latitude=" + Config::Latitude +
+                        "&longitude=" + Config::Longitude +
+                        "&temperature_unit=celsius&wind_speed_unit=ms&precipitation_unit=mm" +
+                        "&timezone=" + uriTimeZone +
+                        "&forecast_hours=144&hourly=temperature_2m,cloud_cover,snowfall,precipitation_probability,rain,weather_code" +
+                        "&temporal_resolution=hourly_6&format=flatbuffers";
+
+                    Serial.printf("Uri: %s\n", uri.c_str());
+
+                    http.begin(uri);
+                    int httpCode = http.GET();
+
+                    if (httpCode == HTTP_CODE_OK)
+                    {
+                        int bufferSize = http.getSize();
+                        if (bufferSize < 0)
+                            bufferSize = 1 * 1024;
+
+                        uint8_t* buffer = reinterpret_cast<uint8_t*>(malloc(bufferSize));
+
+                        MemoryStream stream(buffer, bufferSize);
+
+                        http.writeToStream(&stream);
+
+                        Serial.printf("Received %d bytes\n", stream.getPosition());
+
+                        // this does a simple mapping to the buffer, no memory copy occurs
+                        auto apiResponse = openmeteo_sdk::GetWeatherApiResponse(buffer);
+                    }
+                    else
+                    {
+                        String errorString = http.errorToString(httpCode);
+                        Serial.printf("connection failed, error %d: %s\n", httpCode, errorString.c_str());
+                        Serial.println(http.getString());
+                    }
+                    wifiClient.stop();
+                    http.end();
                 }
             }
         }
