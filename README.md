@@ -1,0 +1,41 @@
+# CelebWeather
+
+Le but de ce projet est de relayer les prévisions météorologiques fournies par [Open-Meteo](https://open-meteo.com/) vers une station d'affichage recevant ces messages au format POCSAG.
+
+Le principe est le suivant:
+
+```
+Open-Meteo ---> ESP32 ---> RFM69 ---> Station
+```
+
+Ce projet est un "travail en cours", voici les étapes envisagées, celles barrées sont déjà faites:
+
+
+1. Créer un projet de base ESP32 Arduino
+2. Permettre une configuration du module en mode "Point d'accès temporaire"
+3. Lire les données Open-Meteo toutes les 60 minutes
+4. Mettre en forme ces données pour créer un message POCSAG
+5. Emettre ce message au bon format
+
+## Matériel
+
+Ce projet cible un montage à base d'ESP32 communiquant avec un module RFM69 tout prêt et a été testé avec cette combinaison:
+
+ESP32-WROOM32D
+RFM69C calé sur 433MHz
+
+Les connexions sont les suivantes:
+
+| ESP32 | RFM69 |
+|-------|-------|
+|  GND  |  GND  |
+|  3V3  |  3.3  |
+|   4   | RESET |
+|   5   |  NSS  |
+|  18   |  SCK  |
+|  19   | MISO  |
+|  23   | MOSI  |
+|  26   | DIO2  |
+|  27   | DIO3  |
+
+26 et 27 ne sont probablement pas utiles mais repris d'un montage pour [RFLink32](https://github.com/cpainchaud/RFLink32)
