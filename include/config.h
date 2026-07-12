@@ -14,15 +14,23 @@ namespace CelebWeather
     {
         const int NTPServerNameLength = 100;
 
+        const int LatitudeLength = 12;
+        const int LongitudeLength = 12;
+        const int TimezoneLength = 20;
+
         const int OpenMeteoBaseURILength = 100;
         const int OpenMeteoAPIKeyLength = 256;
 
         extern char NTPServerName[NTPServerNameLength];
 
+        extern char Latitude[LatitudeLength];
+        extern char Longitude[LongitudeLength];
+        extern char Timezone[TimezoneLength];
+
         extern char OpenMeteoBaseURI[OpenMeteoBaseURILength];
         extern char OpenMeteoAPIKey[OpenMeteoAPIKeyLength];
 
-        extern int RefreshPeriod;
+        extern int RefreshPeriodSeconds;
     }
 }
 #endif
