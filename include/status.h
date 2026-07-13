@@ -19,6 +19,8 @@ namespace CelebWeather
         extern struct timeval TimeAtBoot;
         extern bool Connected;
 
+        void setForceRefresh(bool value);
+
         void setup();
 
         void loop();

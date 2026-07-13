@@ -9,6 +9,7 @@
 #include <IotWebConf.h>
 #include "config.h"
 #include "network.h"
+#include "status.h"
 
 namespace CelebWeather
 {
@@ -101,6 +102,7 @@ namespace CelebWeather
         void configSaved()
         {
             Network::reconnectServices();
+            Status::setForceRefresh(true);
         }
    }
 }

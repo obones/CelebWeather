@@ -22,6 +22,12 @@ namespace CelebWeather
     {
         struct timeval TimeAtBoot;
         bool Connected = false;
+        static bool forceRefresh = true;
+
+        void setForceRefresh(bool value)
+        {
+            forceRefresh = value;
+        }
 
         void setup()
         {
@@ -34,7 +40,6 @@ namespace CelebWeather
         void loop()
         {
             static unsigned long previousMillis = 0;
-            static bool forceRefresh = true;
             if (Connected && ((millis() - previousMillis > Config::RefreshPeriodSeconds * 1000) || forceRefresh))
             {
                 previousMillis = millis();
