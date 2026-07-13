@@ -13,23 +13,10 @@
 //     Adapted by Olivier Sannier for the CelebWeather project
 ///////////////////////////////////////////////////////////////////////////////////
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
-
-#include <stdint.h>
-
 #include <Arduino.h>
 
 #include "encoder.h"
-
-// #include "cmd_param.h"
+#include "config.h"
 
 #define MAX_MSG_SIZE 512
 
@@ -527,7 +514,7 @@ namespace CelebWeather
 
             // department
             {
-                int8_t departement = 75;
+                int8_t departement = atoi(Config::Department);
 
                 genfrm->quartetFrame[0] = 0x4;
                 genfrm->quartetFrame[1] = (departement>>4) & 0xF;

@@ -17,6 +17,7 @@ namespace CelebWeather
         const int LatitudeLength = 12;
         const int LongitudeLength = 12;
         const int TimezoneLength = 20;
+        const int DepartmentLength = 3;
 
         const int OpenMeteoBaseURILength = 100;
         const int OpenMeteoAPIKeyLength = 256;
@@ -26,6 +27,7 @@ namespace CelebWeather
         extern char Latitude[LatitudeLength];
         extern char Longitude[LongitudeLength];
         extern char Timezone[TimezoneLength];
+        extern char Department[DepartmentLength];
 
         extern char OpenMeteoBaseURI[OpenMeteoBaseURILength];
         extern char OpenMeteoAPIKey[OpenMeteoAPIKeyLength];
