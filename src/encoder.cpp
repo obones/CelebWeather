@@ -504,7 +504,7 @@ namespace CelebWeather
             }
         }*/
 
-        void Encode(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize)
+        void EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize)
         {
             int destFrameIndex = 0;
 
@@ -578,5 +578,35 @@ namespace CelebWeather
             free(genfrm);
         }
 
+        void EncodeTime(unsigned char* destFrame, size_t destFrameSize)
+        {
+            int destFrameIndex = 0;
+
+            frame* genfrm = reinterpret_cast<frame*>(calloc(sizeof(frame)*1, 1));
+            if(!genfrm)
+                return;
+
+            genfrm->quartets_cnt = gen_current_time(genfrm->quartetFrame);
+
+            int i = 0;
+            while( i < genfrm->quartets_cnt )
+            {
+                set_quartet( (unsigned char*)(genfrm->decodeFrame), i, genfrm->quartetFrame[i]);
+                i++;
+            }
+
+            int size = (genfrm->quartets_cnt*4)/6;
+            i = 0;
+            while( i < size )
+            {
+                genfrm->frame[i] = raw2char(genfrm->decodeFrame[i]);
+                destFrame[destFrameIndex] = genfrm->frame[i];
+                // printf("%c",genfrm->frm[i]);
+                i++;
+                destFrameIndex++;
+            }
+
+            free(genfrm);
+        }
     }
 }
