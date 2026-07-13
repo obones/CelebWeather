@@ -12,8 +12,8 @@ namespace CelebWeather
 {
     namespace Encoder
     {
-        void EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize);
+        int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize);
 
-        void EncodeTime(unsigned char* destFrame, size_t destFrameSize);
+        int EncodeTime(unsigned char* destFrame, size_t destFrameSize);
     }
 }

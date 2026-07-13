@@ -329,188 +329,20 @@ namespace CelebWeather
                 quartets[quartetsOffset + 14] = 7;
                 for(int i = 0; i < quartetsPerDay - 1; i++)
                 {
-                    quartets[quartetsOffset + 14] += quartets[i];
+                    quartets[quartetsOffset + 14] += quartets[quartetsOffset + i];
                 }
             }
 
             return quartetsPerDay * dayCount;
         }
 
-        /*int main(int argc, char* argv[])
-        {
-            int i,idx,fidx;
-            int quiet,verbose;
-            int param_start_index;
-            frame * genfrm;
-            int sum;
-            char tmp_str[512];
-            int forcast_cnt;
-
-            verbose = 0;
-            if(isOption(argc, argv,"verbose",NULL, NULL) )
-            {
-                verbose = 1;
-            }
-
-            quiet = 0;
-            if(isOption(argc, argv,"quiet",NULL, NULL) )
-            {
-                quiet = 1;
-            }
-
-            if(!quiet)
-                printf("startmeteo v0.1 -help format command line syntax.\n");
-
-            if(isOption(argc, argv,"help",NULL, NULL) )
-            {
-                printf("Syntax:\n");
-                printf("%s -decode [files]\n",argv[0]);
-                printf("%s -encode:[HEX Quartets]\n",argv[0]);
-                printf("%s -checksum     (Update checksum with \"-encode\")\n",argv[0]);
-                printf("%s -curtime       Generate current date/hour frame\n",argv[0]);
-                printf("%s -forecast:[LowTemp],[HighTemp],[MainPicto],[Picto_2],[Picto_3],[Picto_4],[Picto_5]\n",argv[0]);
-                printf("%s -areaid:[idcode]\n",argv[0]);
-
-                printf("%s -quiet\n",argv[0]);
-                printf("%s -verbose\n",argv[0]);
-                printf("\n");
-                printf("Example: %s -decode ../previsions_ok/*.txt\n",argv[0]);
-                printf("Example: %s -curtime -quiet\n",argv[0]);
-                printf("Example: %s -forecast:-10,40,1,2,3,4,5 -forecast:-11,41,6,7,8,9,10 -forecast:-12,42,11,12,13,14,15 -forecast:-13,43,16,17,18,19,20 -areaid:75 -quiet\n",argv[0]);
-                exit(0);
-            }
-
-            param_start_index = 1;
-            if(isOption(argc, argv,"curtime",(char*)tmp_str, &param_start_index) )
-            {
-                genfrm = calloc(sizeof(frame)*1,1);
-                if(!genfrm)
-                    exit(-1);
-
-                genfrm->quartets_cnt = gen_current_time(genfrm->quartetfrm);
-
-                i = 0;
-                while( i < genfrm->quartets_cnt )
-                {
-                    set_quartet( (unsigned char*)(genfrm->dcodefrm), i, genfrm->quartetfrm[i]);
-                    i++;
-                }
-
-                int size = (genfrm->quartets_cnt*4)/6;
-                i = 0;
-                while( i < size )
-                {
-                    genfrm->frm[i] = raw2char(genfrm->dcodefrm[i]);
-                    printf("%c",genfrm->frm[i]);
-                    i++;
-                }
-
-                if(!quiet)
-                    printf("\n");
-
-                free(genfrm);
-            }
-
-            forcast_cnt = 0;
-            param_start_index = 0;
-            while( isOption(argc, argv,"forecast",(char*)tmp_str, &param_start_index) )
-            {
-                forcast_cnt++;
-                param_start_index++;
-            }
-
-            if(forcast_cnt)
-            {
-                int departement;
-
-                departement = 75;
-
-                if(isOption(argc, argv,"areaid",(char*)tmp_str, NULL) )
-                {
-                    departement = atoi(tmp_str);
-                }
-
-                genfrm = calloc(sizeof(frame)*1,1);
-                if(!genfrm)
-                    exit(-1);
-
-                genfrm->quartetfrm[0] = 0x4;
-                genfrm->quartetfrm[1] = (departement>>4) & 0xF;
-                genfrm->quartetfrm[2] = (departement   ) & 0xF;
-                genfrm->quartetfrm[3] = 0x0;
-                genfrm->quartetfrm[4] = 0x4;
-
-                genfrm->quartetfrm[5] = 0x7;
-                for(i=0;i<5;i++)
-                {
-                    genfrm->quartetfrm[5] += genfrm->quartetfrm[i];
-                }
-
-                genfrm->quartets_cnt = 6;
-
-                i = 0;
-                while( i < genfrm->quartets_cnt )
-                {
-                    set_quartet( (unsigned char*)(genfrm->dcodefrm), i, genfrm->quartetfrm[i]);
-                    i++;
-                }
-
-                int size = (genfrm->quartets_cnt*4)/6;
-                i = 0;
-                while( i < size )
-                {
-                    genfrm->frm[i] = raw2char(genfrm->dcodefrm[i]);
-                    printf("%c",genfrm->frm[i]);
-                    i++;
-                }
-
-                if(!quiet)
-                    printf("\n");
-
-                free(genfrm);
-            }
-
-            param_start_index = 0;
-            while( isOption(argc, argv,"forecast",(char*)tmp_str, &param_start_index) )
-            {
-                genfrm = calloc(sizeof(frame)*1,1);
-                if(!genfrm)
-                    exit(-1);
-
-                genfrm->quartets_cnt = gen_forecast(genfrm->quartetfrm,tmp_str);
-
-                i = 0;
-                while( i < genfrm->quartets_cnt )
-                {
-                    set_quartet( (unsigned char*)(genfrm->dcodefrm), i, genfrm->quartetfrm[i]);
-                    i++;
-                }
-
-                int size = (genfrm->quartets_cnt*4)/6;
-                i = 0;
-                while( i < size )
-                {
-                    genfrm->frm[i] = raw2char(genfrm->dcodefrm[i]);
-                    printf("%c",genfrm->frm[i]);
-                    i++;
-                }
-
-                if(!quiet)
-                    printf("\n");
-
-                free(genfrm);
-
-                param_start_index++;
-            }
-        }*/
-
-        void EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize)
+        int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize)
         {
             int destFrameIndex = 0;
 
             frame* genfrm = reinterpret_cast<frame*>(calloc(sizeof(frame)*1, 1));
             if(!genfrm)
-                return;
+                return 0;
 
             // department
             {
@@ -576,15 +408,17 @@ namespace CelebWeather
             }
 
             free(genfrm);
+
+            return destFrameIndex;
         }
 
-        void EncodeTime(unsigned char* destFrame, size_t destFrameSize)
+        int EncodeTime(unsigned char* destFrame, size_t destFrameSize)
         {
             int destFrameIndex = 0;
 
             frame* genfrm = reinterpret_cast<frame*>(calloc(sizeof(frame)*1, 1));
             if(!genfrm)
-                return;
+                return 0;
 
             genfrm->quartets_cnt = gen_current_time(genfrm->quartetFrame);
 
@@ -607,6 +441,8 @@ namespace CelebWeather
             }
 
             free(genfrm);
+
+            return destFrameIndex;
         }
     }
 }
