@@ -7,7 +7,7 @@
  Portions created by Olivier Sannier are Copyright (C) of Olivier Sannier. All rights reserved.
 */
 #include <WiFi.h>
-#include <sntp.h>
+#include <esp_sntp.h>
 #include "config.h"
 #include "status.h"
 
@@ -54,7 +54,46 @@ namespace CelebWeather
             // in case NTP forces a time drift we need to recalculate timeAtBoot
             sntp_set_time_sync_notification_cb(ntpUpdateCallback);
 
-            configTzTime("UTC", Config::NTPServerName);
+            // reset the current time to force complete time read
+            struct tm timeInfo;
+            struct timeval val;
+
+            timeInfo.tm_hour = 0;
+            timeInfo.tm_min = 0;
+            timeInfo.tm_sec = 0;
+            timeInfo.tm_year = 1970;
+            timeInfo.tm_mon = 0;
+            timeInfo.tm_mday = 1;
+            val.tv_sec = mktime(&timeInfo);
+            val.tv_usec = 0;
+            settimeofday(&val, NULL);
+
+            const char* ntpTimezone = "UTC0";
+            int gmtOffset_sec       = 0;
+            int daylightOffset_sec  = 0;
+
+            // Mapping can be done with https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+            // The file is 15KB, it would be a waste of memory to embed it when, realistically, this project will mostly be used in France.
+            if (strcmp(Config::Timezone, "Europe/Paris") == 0)
+            {
+                ntpTimezone        = "CET-1CEST,M3.5.0,M10.5.0/3";
+                gmtOffset_sec      = 3600;  // France normal time is GMT + 1, so GMT Offset is 3600, for US (-5Hrs) is typically -18000, AU is typically (+8hrs) 28800
+                daylightOffset_sec = 3600;  // In France DST is +1hr or 3600-secs, other countries may use 2hrs 7200 or 30-mins 1800 or 5.5hrs 19800 Ahead of GMT use + offset behind - offset
+            }
+
+            // start NTP sync
+            configTime(gmtOffset_sec, daylightOffset_sec, Config::NTPServerName, "0.fr.pool.ntp.org"); //(gmtOffset_sec, daylightOffset_sec, ntpServer)
+
+            setenv("TZ", ntpTimezone, 1);  //setenv()adds the "TZ" variable to the environment with a value TimeZone, only used if set to 1, 0 means no change
+            tzset(); // Set the TZ environment variable
+
+            while (!getLocalTime(&timeInfo, 15000)) // Wait for 15-sec for time to synchronize
+            {
+                Serial.println("Failed to obtain time");
+                Status::Connected = false;
+                return;
+            }
+
             Status::Connected = true;
         }
 
