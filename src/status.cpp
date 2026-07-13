@@ -14,6 +14,7 @@
 #include "status.h"
 #include "config.h"
 #include "weather_api_generated.h"
+#include "encoder.h"
 
 namespace CelebWeather
 {
@@ -52,6 +53,31 @@ namespace CelebWeather
                     String uriTimeZone = Config::Timezone;
                     uriTimeZone.replace("/", "%2F");
 
+                    // we get values starting from today's 03:00 for 6 days (including the current one)
+                    struct tm timeinfo;
+                    if(!getLocalTime(&timeinfo))
+                    {
+                        Serial.println(F("Failed to obtain time"));
+                        return;
+                    }
+                    timeinfo.tm_hour = 3;
+                    timeinfo.tm_min = 0;
+                    timeinfo.tm_sec = 0;
+                    char timeBuffer[25] = "";
+                    strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H%%3A%M%%3A%S", &timeinfo);
+
+                    String startDate = timeBuffer;
+
+                    timeinfo.tm_mday += 5;  // strftime does not handle month overrun, so we must use mktime/localtime
+                    timeinfo.tm_hour = 23;
+                    timeinfo.tm_min = 59;
+                    timeinfo.tm_sec = 59;
+                    time_t endDateTime = mktime(&timeinfo);
+                    struct tm *endDateTm = localtime(&endDateTime);
+                    strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H%%3A%M%%3A%S", endDateTm);
+
+                    String endDate = timeBuffer;
+
                     String uri =
                         String(Config::OpenMeteoBaseURI) +
                         "forecast" +
@@ -59,7 +85,9 @@ namespace CelebWeather
                         "&longitude=" + Config::Longitude +
                         "&temperature_unit=celsius&wind_speed_unit=ms&precipitation_unit=mm" +
                         "&timezone=" + uriTimeZone +
-                        "&forecast_hours=144&hourly=temperature_2m,cloud_cover,snowfall,precipitation_probability,rain,weather_code" +
+                        "&start_hour=" + startDate +
+                        "&end_hour=" + endDate +
+                        "&hourly=temperature_2m_min,temperature_2m_max,cloud_cover,snowfall,precipitation_probability,rain,weather_code" +
                         "&temporal_resolution=hourly_6&format=flatbuffers";
 
                     Serial.printf("Uri: %s\n", uri.c_str());
@@ -71,7 +99,7 @@ namespace CelebWeather
                     {
                         int bufferSize = http.getSize();
                         if (bufferSize < 0)
-                            bufferSize = 1 * 1024;
+                            bufferSize = 1.2 * 1024;
 
                         uint8_t* buffer = reinterpret_cast<uint8_t*>(malloc(bufferSize));
 
@@ -82,7 +110,22 @@ namespace CelebWeather
                         Serial.printf("Received %d bytes\n", stream.getPosition());
 
                         // this does a simple mapping to the buffer, no memory copy occurs
-                        auto apiResponse = openmeteo_sdk::GetWeatherApiResponse(buffer);
+                        auto forecast = openmeteo_sdk::GetSizePrefixedWeatherApiResponse(buffer);
+
+                        Serial.printf("forecast: %p\n", forecast);
+
+                        const int destFrameSize = 100;
+                        unsigned char destFrame[destFrameSize] = {};
+
+                        Encoder::Encode(forecast, destFrame, destFrameSize);
+
+                        for(int index = 0; index < destFrameSize; index++)
+                        {
+                            Serial.printf("%c", destFrame[index]);
+                        }
+                        Serial.println();
+
+                        free(buffer);
                     }
                     else
                     {
