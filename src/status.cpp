@@ -15,6 +15,7 @@
 #include "config.h"
 #include "weather_api_generated.h"
 #include "encoder.h"
+#include "pocsag.h"
 
 namespace CelebWeather
 {
@@ -50,6 +51,8 @@ namespace CelebWeather
                 Serial.printf("%c", destFrame[index]);
             }
             Serial.println();
+
+            Pocsag::GetBits(destFrame, destFrameSize);
         }
 
         void sendForecastMessage()
@@ -138,6 +141,8 @@ namespace CelebWeather
                         Serial.printf("%c", destFrame[index]);
                     }
                     Serial.println();
+
+                    Pocsag::GetBits(destFrame, destFrameSize);
 
                     free(buffer);
                 }

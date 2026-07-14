@@ -3,6 +3,7 @@
         "departement",
         "iotwebconf",
         "Meteo",
-        "openmeteo"
+        "openmeteo",
+        "Pocsag"
     ]
 }
