@@ -18,25 +18,7 @@
 
 #include <Arduino.h>
 
-/*#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>*/
-//#include <sys/types.h>
-/*#include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
-#include <math.h>*/
-
-//#include <stdint.h>
-/*
-#include "cmd_param.h"
-
-#include "wave.h"
-#include "modulator.h"
-#include "serial.h"
-#include "utils.h"*/
+#include "radio.h"
 
 namespace CelebWeather
 {
@@ -443,6 +425,7 @@ namespace CelebWeather
         }
 
         #define MAXBATCHCNT 40 //128
+        #define MAX_BYTES 400
 
         //  -generate -ric:25176 -func:3 -alpha -stdin_message -bits_stream_out -quiet
 
@@ -490,15 +473,33 @@ namespace CelebWeather
             }
 
             Serial.println("Reading bytes out of batches");
+            uint8_t* bytes = new uint8_t[MAX_BYTES];
+            int bytesCount = 0;
             while( !pocctx.frm_end )
             {
                 unsigned char tmp = pocsag_nextbyte(&pocctx, batches, batchesCount);
                 Serial.printf("%02x ", tmp);
+
+                bytes[bytesCount++] = tmp;
+
+                if (bytesCount > MAX_BYTES)
+                {
+                    Serial.printf("\n/!\\ Too many bytes to write ! (%d > %d)\n", bytesCount, MAX_BYTES);
+                    return 0;
+                }
             }
             Serial.println();
-
             delete batches;
-            return batchesCount;
+
+            Serial.printf("Sending %d bytes\n", bytesCount);
+            bool transmitResult = Radio::transmit(bytes, bytesCount);
+            if (transmitResult)
+                Serial.println("  -> Done");
+            else
+                Serial.println("  -> Failed transmission");
+
+            delete bytes;
+            return bytesCount;
 
 /*            // Blank
             i = 0;
