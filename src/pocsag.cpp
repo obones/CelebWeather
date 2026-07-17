@@ -466,7 +466,7 @@ namespace CelebWeather
             }
 
             Serial.println("Generating batches");
-            int batchesCount = set_alphanum_frame((poc_batch *)&batches, MAXBATCHCNT-1, ric, func&3, (char*)frame, frameSize);
+            int batchesCount = set_alphanum_frame(batches, MAXBATCHCNT-1, ric, func&3, frame, frameSize);
             Serial.print("Generated "); Serial.print(batchesCount); Serial.println(" batches");
 
             if( batchesCount < 0 )
@@ -492,7 +492,7 @@ namespace CelebWeather
             Serial.println("Reading bytes out of batches");
             while( !pocctx.frm_end )
             {
-                unsigned char tmp = pocsag_nextbyte(&pocctx, (poc_batch *)&batches, batchesCount);
+                unsigned char tmp = pocsag_nextbyte(&pocctx, batches, batchesCount);
                 Serial.printf("%02x ", tmp);
             }
             Serial.println();
