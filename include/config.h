@@ -33,6 +33,8 @@ namespace CelebWeather
         extern char OpenMeteoAPIKey[OpenMeteoAPIKeyLength];
 
         extern int RefreshPeriodSeconds;
+
+        void reset();
     }
 }
 #endif

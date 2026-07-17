@@ -17,11 +17,17 @@ namespace CelebWeather
         char Latitude[LatitudeLength] = "";
         char Longitude[LongitudeLength] = "";
         char Timezone[TimezoneLength] = "Europe/Paris";
-        char Department[DepartmentLength] = "75";
 
         char OpenMeteoBaseURI[OpenMeteoBaseURILength] = "https://api.open-meteo.com/v1/";
         char OpenMeteoAPIKey[OpenMeteoAPIKeyLength] = "";
 
+        // not managed via the portal
+        char Department[DepartmentLength] = "";
         int RefreshPeriodSeconds = 60 * 60;
+
+        void reset()
+        {
+            Department[0] = 0;
+        }
     }
 }

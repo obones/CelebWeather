@@ -10,6 +10,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <MemoryStream.h>
+#include <ArduinoJson.h>
 
 #include "status.h"
 #include "config.h"
@@ -36,6 +37,73 @@ namespace CelebWeather
             {
                 Serial.println(F("Failed to obtain time"));
             }
+        }
+
+        void retrieveDepartment()
+        {
+            String department = "75";
+
+            Serial.println("Retrieving department");
+            WiFiClient wifiClient;   // wifi client object
+            wifiClient.stop(); // close connection before sending a new request
+            HTTPClient http;
+            http.setTimeout(15000);
+            http.setConnectTimeout(15000);
+
+            String uri =
+                String("https://geo.api.gouv.fr/communes") +
+                "?lat=" + Config::Latitude +
+                "&lon=" + Config::Longitude +
+                "&fields=codeDepartement&format=json";
+
+            Serial.printf("Department Uri: %s\n", uri.c_str());
+
+            http.begin(uri);
+            int httpCode = http.GET();
+
+            if (httpCode == HTTP_CODE_OK)
+            {
+                String reply = http.getString();
+                JsonDocument doc;
+                DeserializationError error = deserializeJson(doc, reply);
+                if (error)
+                {
+                    Serial.print("deserializeJson() returned ");
+                    Serial.println(error.c_str());
+                }
+                else
+                {
+                    auto rootArray = doc.as<JsonArray>();
+                    if (!rootArray.isNull() && (rootArray.size() > 0))
+                    {
+                        auto firstItem = rootArray[0].as<JsonObject>();
+                        if (firstItem.isNull())
+                        {
+                            Serial.println("First item is not an object");
+                        }
+                        else
+                        {
+                            const char* value = firstItem["codeDepartement"];
+                            department = value;
+                        }
+
+                    }
+                    else
+                    {
+                        Serial.println("Root JSON has no members");
+                    }
+                }
+
+            }
+            else
+            {
+                String errorString = http.errorToString(httpCode);
+                Serial.printf("connection failed, error %d: %s\n", httpCode, errorString.c_str());
+                Serial.println(http.getString());
+            }
+
+            Serial.printf("Department found: %s\n", department.c_str());
+            strcpy(Config::Department, department.c_str());
         }
 
         void sendTimeSyncMessage()
@@ -164,6 +232,10 @@ namespace CelebWeather
 
             if (Connected)
             {
+                // retrieve department if needed
+                if (Config::Department[0] == 0)
+                    retrieveDepartment();
+
                 // send time sync if time interval has elapsed
                 if (((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds * 1000) || forceRefresh))
                 {

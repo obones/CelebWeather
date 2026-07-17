@@ -36,7 +36,6 @@ namespace CelebWeather
         auto latitude = iotwebconf::TextParameter("Latitude", "latitude", Config::Latitude, sizeof(Config::Latitude), Config::Latitude);
         auto longitude = iotwebconf::TextParameter("Longitude", "longitude", Config::Longitude, sizeof(Config::Longitude), Config::Longitude);
         auto timezone = iotwebconf::TextParameter("Time zone", "timezone", Config::Timezone, sizeof(Config::Timezone), Config::Timezone);
-        auto department = iotwebconf::TextParameter("Department", "department", Config::Department, sizeof(Config::Department), Config::Department);
 
         auto openMeteoGroup = iotwebconf::ParameterGroup("openMeteo", "Open-Meteo parameters");
         auto openMeteoBaseURI = iotwebconf::TextParameter("Base URI", "openMeteoBaseURI", Config::OpenMeteoBaseURI, sizeof(Config::OpenMeteoBaseURI), Config::OpenMeteoBaseURI);
@@ -51,7 +50,6 @@ namespace CelebWeather
             generalParametersGroup.addItem(&latitude);
             generalParametersGroup.addItem(&longitude);
             generalParametersGroup.addItem(&timezone);
-            generalParametersGroup.addItem(&department);
             iotWebConf.addParameterGroup(&generalParametersGroup);
 
             openMeteoGroup.addItem(&openMeteoBaseURI);
@@ -101,6 +99,7 @@ namespace CelebWeather
 
         void configSaved()
         {
+            Config::reset();
             Network::reconnectServices();
             Status::setForceRefresh(true);
         }
