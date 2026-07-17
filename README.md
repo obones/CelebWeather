@@ -32,13 +32,14 @@ Les connexions sont les suivantes:
 |  3V3  |  3.3  |
 |   4   | RESET |
 |   5   |  NSS  |
+|  13   | DIO0  |
 |  18   |  SCK  |
 |  19   | MISO  |
 |  23   | MOSI  |
 |  26   | DIO2  |
 |  27   | DIO3  |
 
-26 et 27 ne sont probablement pas utiles mais repris d'un montage pour [RFLink32](https://github.com/cpainchaud/RFLink32)
+13, 26 et 27 ne sont probablement pas utiles mais repris d'un montage pour [RFLink32](https://github.com/cpainchaud/RFLink32)
 
 ## Développement
 
