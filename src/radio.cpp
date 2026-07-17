@@ -19,12 +19,27 @@ namespace CelebWeather
         #define RFM69_RST 4
         #define RFM69_INT 13
 
-        #define FREQUENCY 433.0
+        //#define FREQUENCY 433.0
+        #define FREQUENCY 466.206250
 
         #define CONFIG_FSK (RH_RF69_DATAMODUL_DATAMODE_PACKET | RH_RF69_DATAMODUL_MODULATIONTYPE_FSK | RH_RF69_DATAMODUL_MODULATIONSHAPING_FSK_NONE)
         #define CONFIG_NOWHITE (RH_RF69_PACKETCONFIG1_PACKETFORMAT_VARIABLE | RH_RF69_PACKETCONFIG1_DCFREE_NONE | RH_RF69_PACKETCONFIG1_ADDRESSFILTERING_NONE)
 
         RH_RF69 rf69(RFM69_CS, RFM69_INT);
+
+        bool setFrequency(float freq)
+        {
+            // borrowed from RadioLib
+            if(!(((freq > 290.0) && (freq < 340.0)) ||
+                ((freq > 431.0) && (freq < 510.0)) ||
+                ((freq > 862.0) && (freq < 1020.0))))
+            {
+                Serial.printf("Invalid frequency for RF69: %f", freq);
+                return false;
+            }
+
+            return rf69.setFrequency(freq);
+        }
 
         void setup()
         {
@@ -35,7 +50,7 @@ namespace CelebWeather
             if (!rf69.init())
                 Serial.println("init failed");
 
-            if (!rf69.setFrequency(FREQUENCY))
+            if (!setFrequency(FREQUENCY))
                 Serial.println("setFrequency failed");
 
             // Set registers for 1200bps with 4.5KHz deviation.
@@ -51,17 +66,21 @@ namespace CelebWeather
             //rf69.waitPacketSent();
             rf69.setModeIdle();
 
+            // force FIFO clear
+            rf69.spiWrite(RH_RF69_REG_28_IRQFLAGS2, RH_RF69_IRQFLAGS2_FIFOOVERRUN);
+            rf69.spiWrite(RH_RF69_REG_28_IRQFLAGS2, 0);
+
             Serial.println("  Waiting for CAD");
             //while (!rf69.waitCAD());
 
             // Set FifoThreshold to 32 bytes (out of 68)
-            rf69.spiWrite(0x3c, 0xa0);
+            rf69.spiWrite(RH_RF69_REG_3C_FIFOTHRESH, 0xa0);
 
             // Turn off sync bits
-            rf69.spiWrite(0x2e, 0);
+            rf69.spiWrite(RH_RF69_REG_2E_SYNCCONFIG, 0);
 
             // Set exit condition to fifo empty
-            rf69.spiWrite(0x3b, 0x04);
+            rf69.spiWrite(RH_RF69_REG_3B_AUTOMODES, RH_RF69_AUTOMODE_ENTER_COND_NONE | RH_RF69_AUTOMODE_EXIT_COND_FIFO_EMPTY | RH_RF69_AUTOMODE_INTERMEDIATE_MODE_SLEEP); // 0x04
 
             // invert bits
             uint8_t* data_i = bytes;
@@ -80,13 +99,13 @@ namespace CelebWeather
                 uint8_t fifo_overrun = irq_flags % RH_RF69_IRQFLAGS2_FIFOOVERRUN;
                 if (fifo_overrun)
                 {
-                    Serial.println("FIFO overrun !");
+                    Serial.println("  /!\\ FIFO overrun !");
                     return false;
                 }
 
                 if (fifo_full || fifo_level)
                 {
-                    Serial.println("FIFO is above level!");
+                    //Serial.println("    FIFO is above level!");
                     continue;
                 }
 
@@ -94,13 +113,13 @@ namespace CelebWeather
                 if (_len > (len - b))
                     _len = len - b;
 
-                Serial.printf("  Putting %d bytes in FIFO", _len);
+                //Serial.printf("  Putting %d bytes in FIFO\n", _len);
                 rf69.spiBurstWrite(RH_RF69_REG_00_FIFO | RH_RF69_SPI_WRITE_MASK, &(data_i[b]), _len);
                 b += _len;
 
                 if (first)
                 {
-                    Serial.println("  First data sent to FIFO, starting TX");
+                    //Serial.println("  First data sent to FIFO, starting TX");
                     rf69.setModeTx();
                 }
                 first = false;
@@ -108,7 +127,7 @@ namespace CelebWeather
 
             Serial.println("  Waiting for FIFO to get empty");
             bool fifoNotEmpty = true;
-            while (!fifoNotEmpty)
+            while (fifoNotEmpty)
             {
                 uint8_t irq_flags = rf69.spiRead(RH_RF69_REG_28_IRQFLAGS2);
                 fifoNotEmpty = irq_flags & RH_RF69_IRQFLAGS2_FIFONOTEMPTY;
@@ -117,7 +136,6 @@ namespace CelebWeather
             Serial.println("  Returning to idle mode");
             rf69.setModeIdle();
 
-            Serial.println("  Done.");
             return true;
         }
     }
