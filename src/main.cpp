@@ -10,6 +10,7 @@
 #include "portal.h"
 #include "network.h"
 #include "status.h"
+#include "radio.h"
 
 void setup()
 {
@@ -26,6 +27,7 @@ void setup()
     CelebWeather::Portal::setup();
     CelebWeather::Network::setup();
     CelebWeather::Status::setup();
+    CelebWeather::Radio::setup();
 
     Serial.println("Ready.");
 }
