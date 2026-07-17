@@ -301,7 +301,7 @@ namespace CelebWeather
             return ba+1;
         }
 */
-        int set_alphanum_frame(poc_batch * batch, int batchcnt, unsigned int ric, unsigned int func, char * message, int message_size)
+        int set_alphanum_frame(poc_batch * batch, int batchcnt, unsigned int ric, unsigned int func, const unsigned char * message, int message_size)
         {
             int ba,b,i,w,framecnt;
             int digitcnt;
@@ -404,7 +404,7 @@ namespace CelebWeather
 
         //  -generate -ric:25176 -func:3 -alpha -stdin_message -bits_stream_out -quiet
 
-        int GetBits(unsigned char* frame, size_t frameSize)
+        int GetBits(const unsigned char* frame, size_t frameSize)
         {
             int ric = 25176;
             int func = 3;
