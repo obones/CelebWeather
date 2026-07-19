@@ -160,6 +160,23 @@ namespace CelebWeather
             sendFrame(frame, actualFrameSize);
         }
 
+        void transmitForecast(const openmeteo_sdk::WeatherApiResponse* forecast, int8_t department)
+        {
+            const int maxFrameSize = 100;
+            unsigned char frame[maxFrameSize] = {};
+
+            int actualFrameSize = Encoder::EncodeForecast(forecast, department, frame, maxFrameSize);
+
+            Serial.print("Encoded forecast: ");
+            for(int index = 0; index < actualFrameSize; index++)
+            {
+                Serial.printf("%c", frame[index]);
+            }
+            Serial.println();
+
+            sendFrame(frame, actualFrameSize);
+        }
+
         void sendForecastMessage()
         {
             if (Config::OpenMeteoBaseURI[0] != 0)
@@ -234,19 +251,11 @@ namespace CelebWeather
                     // this does a simple mapping to the buffer, no memory copy occurs
                     auto forecast = openmeteo_sdk::GetSizePrefixedWeatherApiResponse(buffer);
 
-                    const int maxFrameSize = 100;
-                    unsigned char frame[maxFrameSize] = {};
-
-                    int actualFrameSize = Encoder::EncodeForecast(forecast, frame, maxFrameSize);
-
-                    Serial.print("Encoded forecast: ");
-                    for(int index = 0; index < actualFrameSize; index++)
-                    {
-                        Serial.printf("%c", frame[index]);
-                    }
-                    Serial.println();
-
-                    sendFrame(frame, actualFrameSize);
+                    // Send first with 75 (and maybe bogus forecast), then retry with actual department if different
+                    transmitForecast(forecast, 75);
+                    int8_t department = atoi(Config::Department);
+                    if (department != 75)
+                        transmitForecast(forecast, department);
 
                     free(buffer);
                 }
