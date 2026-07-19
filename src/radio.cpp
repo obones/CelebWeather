@@ -71,8 +71,17 @@ namespace CelebWeather
             rf69.setTxPower(0, false);
         }
 
+        #define WAIT_BETWEEN_TRANSMIT 5000
+
         bool transmit(uint8_t* bytes, unsigned int len)
         {
+            static unsigned long previousTransmitMillis = 0;
+
+            while (millis() - previousTransmitMillis < WAIT_BETWEEN_TRANSMIT)
+            {
+                yield();
+            }
+
             //rf69.waitPacketSent();
             rf69.setModeIdle();
 
