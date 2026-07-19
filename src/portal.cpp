@@ -30,16 +30,16 @@ namespace CelebWeather
 
         IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
 
-        auto ntpServerName = iotwebconf::TextParameter("NTP server", "ntpServer", Config::NTPServerName, sizeof(Config::NTPServerName), Config::NTPServerName);
+        auto ntpServerName = iotwebconf::TextParameter("NTP server", "ntpServer", Config::NTPServerName, (sizeof(Config::NTPServerName) - 1) * sizeof(Config::NTPServerName[0]), Config::NTPServerName);
 
         auto generalParametersGroup = iotwebconf::ParameterGroup("general", "General parameters");
-        auto latitude = iotwebconf::TextParameter("Latitude", "latitude", Config::Latitude, sizeof(Config::Latitude), Config::Latitude);
-        auto longitude = iotwebconf::TextParameter("Longitude", "longitude", Config::Longitude, sizeof(Config::Longitude), Config::Longitude);
-        auto timezone = iotwebconf::TextParameter("Time zone", "timezone", Config::Timezone, sizeof(Config::Timezone), Config::Timezone);
+        auto latitude = iotwebconf::TextParameter("Latitude", "latitude", Config::Latitude, (sizeof(Config::Latitude) - 1) * sizeof(Config::Latitude[0]), Config::Latitude);
+        auto longitude = iotwebconf::TextParameter("Longitude", "longitude", Config::Longitude, (sizeof(Config::Longitude) - 1) * sizeof(Config::Longitude[0]), Config::Longitude);
+        auto timezone = iotwebconf::TextParameter("Time zone", "timezone", Config::Timezone, (sizeof(Config::Timezone) - 1) * sizeof(Config::Timezone[0]), Config::Timezone);
 
         auto openMeteoGroup = iotwebconf::ParameterGroup("openMeteo", "Open-Meteo parameters");
-        auto openMeteoBaseURI = iotwebconf::TextParameter("Base URI", "openMeteoBaseURI", Config::OpenMeteoBaseURI, sizeof(Config::OpenMeteoBaseURI), Config::OpenMeteoBaseURI);
-        auto openMeteoApiKey = iotwebconf::TextParameter("API Key", "openMeteoApiKey", Config::OpenMeteoAPIKey, sizeof(Config::OpenMeteoAPIKey), Config::OpenMeteoAPIKey);
+        auto openMeteoBaseURI = iotwebconf::TextParameter("Base URI", "openMeteoBaseURI", Config::OpenMeteoBaseURI, (sizeof(Config::OpenMeteoBaseURI) - 1) * sizeof(Config::OpenMeteoBaseURI[0]), Config::OpenMeteoBaseURI);
+        auto openMeteoApiKey = iotwebconf::TextParameter("API Key", "openMeteoApiKey", Config::OpenMeteoAPIKey, (sizeof(Config::OpenMeteoAPIKey) - 1) * sizeof(Config::OpenMeteoAPIKey[0]), Config::OpenMeteoAPIKey);
 
         void setup()
         {
