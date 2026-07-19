@@ -16,7 +16,6 @@
 #include <Arduino.h>
 
 #include "encoder.h"
-#include "config.h"
 
 #define MAX_MSG_SIZE 512
 
@@ -336,7 +335,7 @@ namespace CelebWeather
             return quartetsPerDay * dayCount;
         }
 
-        int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, unsigned char* destFrame, size_t destFrameSize)
+        int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, int8_t department, unsigned char* destFrame, size_t destFrameSize)
         {
             int destFrameIndex = 0;
 
@@ -346,11 +345,9 @@ namespace CelebWeather
 
             // department
             {
-                int8_t departement = atoi(Config::Department);
-
                 genfrm->quartetFrame[0] = 0x4;
-                genfrm->quartetFrame[1] = (departement>>4) & 0xF;
-                genfrm->quartetFrame[2] = (departement   ) & 0xF;
+                genfrm->quartetFrame[1] = (department>>4) & 0xF;
+                genfrm->quartetFrame[2] = (department   ) & 0xF;
                 genfrm->quartetFrame[3] = 0x0;
                 genfrm->quartetFrame[4] = 0x4;
 
