@@ -14,8 +14,9 @@ Ce projet est un "travail en cours", voici les étapes envisagées, celles barr�
 1. ~~Créer un projet de base ESP32 Arduino~~
 2. ~~Permettre une configuration du module en mode "Point d'accès temporaire"~~
 3. ~~Lire les données Open-Meteo toutes les 60 minutes~~
-4. Mettre en forme ces données pour créer un message POCSAG
-5. Emettre ce message au bon format
+4. ~~Mettre en forme ces données pour créer un message POCSAG~~
+5. ~~Emettre ce message au bon format~~
+6. Constater que c'est bien lu par la station
 
 ## Matériel
 
@@ -26,18 +27,21 @@ RFM69C calé sur 433MHz
 
 Les connexions sont les suivantes:
 
-| ESP32 | RFM69 |
-|-------|-------|
-|  GND  |  GND  |
-|  3V3  |  3.3  |
-|   4   | RESET |
-|   5   |  NSS  |
-|  13   | DIO0  |
-|  18   |  SCK  |
-|  19   | MISO  |
-|  23   | MOSI  |
-|  26   | DIO2  |
-|  27   | DIO3  |
+| ESP32 | RFM69 | Force refresh<br/>button | AP config<br/>button | AP status LED | AP status LED<br/>resistor |
+|-------|-------|:-----:|:-----:|:------------:|:------------:|
+|  GND  |  GND  | Leg 1 | Leg 1 |              |              |
+|  3V3  |  3.3  |       |       |              |     Leg 1    |
+|   4   | RESET |       |       |              |              |
+|   5   |  NSS  |       |       |              |              |
+|  12   |       |       | Leg 2 |              |              |
+|  13   | DIO0  |       |       |              |              |
+|  18   |  SCK  |       |       |              |              |
+|  19   | MISO  |       |       |              |              |
+|  21   |       | Leg 2 |       |              |              |
+|  23   | MOSI  |       |       |              |              |
+|  26   | DIO2  |       |       |              |              |
+|  27   | DIO3  |       |       |              |              |
+|  32   |       |       |       | Long leg (-) |              |
 
 13, 26 et 27 ne sont probablement pas utiles mais repris d'un montage pour [RFLink32](https://github.com/cpainchaud/RFLink32)
 
@@ -65,3 +69,13 @@ Il faut alors modifier le mot de passe du portail (AP password) puis donner les 
 Par ailleurs, à la section "General parameters", renseignez la latitude et la longitude pour laquelle vous voulez les prévisions. Attention, il faut utiliser le point comme séparateur décimal
 
 La section "Open-Meteo parameters" contient des valeurs par défaut qui suffisent pour 99% des utilisateurs, ne la modifiez que si vous savez ce que vous faites.
+
+Une fois la configuration effectuée, déconnectez vous du point d'accès temporaire pour laisser le code s'exécuter. Il se connecte alors à votre WiFi et vous pourrez vous connecter à la page de configuration sur http://IP/config avec "admin" et le mot de passe que vous avez indiqué juste avant. La valeur de IP dépend de votre réseau local, elle est fournie en DHCP et vous devriez pouvoir la voir dans la page d'état de votre routeur WiFi.
+
+### Boutons
+
+Le bouton "Force refresh" est utile pour forcer une transmission immédiate de l'heure et de la prévision météorologique
+
+Le bouton "AP config" est à maintenir enfoncé à la mise sous tension du système pour forcer l'activation du point d'accès avec le mot de passe par défaut
+si vous avez oublié la valeur que vous avez donné lors de l'initialisation.
+Il faudra alors procéder au changement du mot de passe AP comme lors de la configuration initiale

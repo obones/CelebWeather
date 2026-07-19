@@ -23,6 +23,8 @@ namespace CelebWeather
 {
     namespace Status
     {
+        #define FORCE_REFRESH_PIN 21
+
         struct timeval TimeAtBoot;
         bool Connected = false;
         static volatile bool forceRefresh = true;
@@ -32,12 +34,30 @@ namespace CelebWeather
             forceRefresh = value;
         }
 
+        static volatile unsigned long previousForceRefreshISRMillis = 0;
+        void IRAM_ATTR forceRefreshPinISR()
+        {
+            unsigned long currentMillis = millis();
+
+            // debounce
+            if (currentMillis - previousForceRefreshISRMillis > 500)
+            {
+                if (digitalRead(FORCE_REFRESH_PIN) == 0)
+                    setForceRefresh(true);
+            }
+
+            previousForceRefreshISRMillis = currentMillis;
+        }
+
         void setup()
         {
             if (gettimeofday(&TimeAtBoot, NULL) != 0)
             {
                 Serial.println(F("Status::setup() -> Failed to obtain time"));
             }
+
+            pinMode(FORCE_REFRESH_PIN, INPUT_PULLUP);
+            ::attachInterrupt(digitalPinToInterrupt(FORCE_REFRESH_PIN), &forceRefreshPinISR, CHANGE);
         }
 
         void retrieveDepartment()
@@ -252,9 +272,13 @@ namespace CelebWeather
                 if (Config::Department[0] == 0)
                     retrieveDepartment();
 
-                // as forceRefresh is volatile, we must store it locally to avoid a change a value while we work
+                // as forceRefresh is volatile, we must store it locally to avoid a change a value while we work and reset
+                // it as fast as possible to allow quick reuse of the functionality.
                 bool localForceRefresh = forceRefresh;
                 forceRefresh = false;
+
+                if (localForceRefresh)
+                    Serial.println("---- Refresh forced ---");
 
                 // send time sync if time interval has elapsed
                 if (((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds * 1000) || localForceRefresh))

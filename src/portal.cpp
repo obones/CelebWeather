@@ -15,6 +15,11 @@ namespace CelebWeather
 {
     namespace Portal
     {
+        #define AP_CONFIG_PIN 12
+
+        // must be an Ouput capable pin, hence not 34 or 35
+        #define AP_STATUS_PIN 32
+
         // -- Initial name of the Thing. Used e.g. as SSID of the own Access Point.
         const char thingName[] = "CelebWeather";
 
@@ -57,6 +62,9 @@ namespace CelebWeather
             iotWebConf.addParameterGroup(&openMeteoGroup);
 
             iotWebConf.setConfigSavedCallback(&configSaved);
+
+            iotWebConf.setConfigPin(AP_CONFIG_PIN);
+            iotWebConf.setStatusPin(AP_STATUS_PIN);
 
             // -- Initializing the configuration.
             iotWebConf.init();
