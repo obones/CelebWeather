@@ -341,9 +341,11 @@ namespace CelebWeather
             while( !pocctx.frm_end )
             {
                 unsigned char tmp = pocsag_nextbyte(&pocctx, batches, batchesCount);
-                Serial.printf("%02x ", tmp);
-
-                bytes[bytesCount++] = tmp;
+                if (!pocctx.frm_end)
+                {
+                    Serial.printf("%02x ", tmp);
+                    bytes[bytesCount++] = tmp;
+                }
 
                 if (bytesCount > maxBytes)
                 {
