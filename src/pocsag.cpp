@@ -456,7 +456,7 @@ namespace CelebWeather
             {
                 //free(settle_buf);
                 //exit(1);
-                delete batches;
+                delete[] batches;
                 return 0;
             }
 
@@ -485,11 +485,13 @@ namespace CelebWeather
                 if (bytesCount > MAX_BYTES)
                 {
                     Serial.printf("\n/!\\ Too many bytes to write ! (%d > %d)\n", bytesCount, MAX_BYTES);
+                    delete[] batches;
+                    delete[] bytes;
                     return 0;
                 }
             }
             Serial.println();
-            delete batches;
+            delete[] batches;
 
             Serial.printf("Sending %d bytes\n", bytesCount);
             bool transmitResult = Radio::transmit(bytes, bytesCount);
@@ -498,7 +500,7 @@ namespace CelebWeather
             else
                 Serial.println("  -> Failed transmission");
 
-            delete bytes;
+            delete[] bytes;
             return bytesCount;
 
 /*            // Blank
