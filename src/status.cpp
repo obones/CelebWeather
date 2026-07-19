@@ -24,7 +24,7 @@ namespace CelebWeather
     {
         struct timeval TimeAtBoot;
         bool Connected = false;
-        static bool forceRefresh = true;
+        static volatile bool forceRefresh = true;
 
         void setForceRefresh(bool value)
         {
@@ -127,7 +127,6 @@ namespace CelebWeather
         {
             if (Config::OpenMeteoBaseURI[0] != 0)
             {
-                forceRefresh = false;
                 Serial.println("Retrieving Open-Meteo forecast");
 
                 WiFiClient wifiClient;   // wifi client object
@@ -236,8 +235,12 @@ namespace CelebWeather
                 if (Config::Department[0] == 0)
                     retrieveDepartment();
 
+                // as forceRefresh is volatile, we must store it locally to avoid a change a value while we work
+                bool localForceRefresh = forceRefresh;
+                forceRefresh = false;
+
                 // send time sync if time interval has elapsed
-                if (((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds * 1000) || forceRefresh))
+                if (((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds * 1000) || localForceRefresh))
                 {
                     previousTimeSyncMillis = millis();
 
@@ -245,7 +248,7 @@ namespace CelebWeather
                 }
 
                 // forecast messages are sent twice less than time sync
-                if (((millis() - previousForecastMillis > Config::RefreshPeriodSeconds * 2 * 1000) || forceRefresh))
+                if (((millis() - previousForecastMillis > Config::RefreshPeriodSeconds * 2 * 1000) || localForceRefresh))
                 {
                     previousForecastMillis = millis();
 
