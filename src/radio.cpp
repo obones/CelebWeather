@@ -41,6 +41,14 @@ namespace CelebWeather
             return rf69.setFrequency(freq);
         }
 
+        void reset()
+        {
+            digitalWrite(RFM69_RST, HIGH);
+            delay(1);
+            digitalWrite(RFM69_RST, LOW);
+            delay(10);
+        }
+
         void setup()
         {
             pinMode(RFM69_RST, OUTPUT);
@@ -49,6 +57,8 @@ namespace CelebWeather
 
             if (!rf69.init())
                 Serial.println("init failed");
+
+            reset();
 
             if (!setFrequency(FREQUENCY))
                 Serial.println("setFrequency failed");
