@@ -4,6 +4,6 @@ namespace CelebWeather
 {
     namespace Pocsag
     {
-        int GetBits(const unsigned char* frame, size_t frameSize);
+        int GetBytes(const unsigned char* frame, size_t frameSize, uint8_t * bytes, int maxBytes);
     }
 }

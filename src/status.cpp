@@ -17,6 +17,7 @@
 #include "weather_api_generated.h"
 #include "encoder.h"
 #include "pocsag.h"
+#include "radio.h"
 
 namespace CelebWeather
 {
@@ -106,6 +107,22 @@ namespace CelebWeather
             strcpy(Config::Department, department.c_str());
         }
 
+        void sendFrame(const unsigned char* frame, int frameSize)
+        {
+            #define MAX_BYTES 400
+
+            uint8_t* bytes = new uint8_t[MAX_BYTES];
+
+            int actualBytesCount = Pocsag::GetBytes(frame, frameSize, bytes, MAX_BYTES);
+
+            Serial.printf("Sending %d bytes\n", actualBytesCount);
+            bool transmitResult = Radio::transmit(bytes, actualBytesCount);
+            if (transmitResult)
+                Serial.println("  -> Done");
+            else
+                Serial.println("  -> Failed transmission");
+        }
+
         void sendTimeSyncMessage()
         {
             const int maxFrameSize = 100;
@@ -120,7 +137,7 @@ namespace CelebWeather
             }
             Serial.println();
 
-            Pocsag::GetBits(frame, actualFrameSize);
+            sendFrame(frame, actualFrameSize);
         }
 
         void sendForecastMessage()
@@ -209,7 +226,7 @@ namespace CelebWeather
                     }
                     Serial.println();
 
-                    Pocsag::GetBits(frame, actualFrameSize);
+                    sendFrame(frame, actualFrameSize);
 
                     free(buffer);
                 }
