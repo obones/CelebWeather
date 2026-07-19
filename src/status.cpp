@@ -108,19 +108,19 @@ namespace CelebWeather
 
         void sendTimeSyncMessage()
         {
-            const int destFrameSize = 100;
-            unsigned char destFrame[destFrameSize] = {};
+            const int maxFrameSize = 100;
+            unsigned char frame[maxFrameSize] = {};
 
-            Encoder::EncodeTime(destFrame, destFrameSize);
+            int actualFrameSize = Encoder::EncodeTime(frame, maxFrameSize);
 
             Serial.print("Encoded time sync: ");
-            for(int index = 0; index < destFrameSize; index++)
+            for(int index = 0; index < actualFrameSize; index++)
             {
-                Serial.printf("%c", destFrame[index]);
+                Serial.printf("%c", frame[index]);
             }
             Serial.println();
 
-            Pocsag::GetBits(destFrame, destFrameSize);
+            Pocsag::GetBits(frame, actualFrameSize);
         }
 
         void sendForecastMessage()
@@ -197,19 +197,19 @@ namespace CelebWeather
                     // this does a simple mapping to the buffer, no memory copy occurs
                     auto forecast = openmeteo_sdk::GetSizePrefixedWeatherApiResponse(buffer);
 
-                    const int destFrameSize = 100;
-                    unsigned char destFrame[destFrameSize] = {};
+                    const int maxFrameSize = 100;
+                    unsigned char frame[maxFrameSize] = {};
 
-                    Encoder::EncodeForecast(forecast, destFrame, destFrameSize);
+                    int actualFrameSize = Encoder::EncodeForecast(forecast, frame, maxFrameSize);
 
                     Serial.print("Encoded forecast: ");
-                    for(int index = 0; index < destFrameSize; index++)
+                    for(int index = 0; index < actualFrameSize; index++)
                     {
-                        Serial.printf("%c", destFrame[index]);
+                        Serial.printf("%c", frame[index]);
                     }
                     Serial.println();
 
-                    Pocsag::GetBits(destFrame, destFrameSize);
+                    Pocsag::GetBits(frame, actualFrameSize);
 
                     free(buffer);
                 }
