@@ -36,7 +36,7 @@ namespace CelebWeather
         {
             if (gettimeofday(&TimeAtBoot, NULL) != 0)
             {
-                Serial.println(F("Failed to obtain time"));
+                Serial.println(F("Status::setup() -> Failed to obtain time"));
             }
         }
 
@@ -159,7 +159,7 @@ namespace CelebWeather
                 struct tm timeinfo;
                 if(!getLocalTime(&timeinfo))
                 {
-                    Serial.println(F("Failed to obtain time"));
+                    Serial.println(F("Status::sendForecastMessage() -> Failed to obtain time"));
                     return;
                 }
                 timeinfo.tm_hour = 3;

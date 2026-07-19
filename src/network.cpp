@@ -24,7 +24,7 @@ namespace CelebWeather
             {
                 if(!getLocalTime(&tmp))
                 {
-                    Serial.println(F("Failed to obtain time"));
+                    Serial.println(F("Network::printLocalTime() -> Failed to obtain time"));
                     return;
                 }
                 timeinfo = &tmp;
@@ -89,7 +89,7 @@ namespace CelebWeather
 
             while (!getLocalTime(&timeInfo, 15000)) // Wait for 15-sec for time to synchronize
             {
-                Serial.println("Failed to obtain time");
+                Serial.println("Network::reconnectServices() -> Failed to obtain time");
                 Status::Connected = false;
                 return;
             }
