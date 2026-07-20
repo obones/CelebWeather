@@ -351,7 +351,6 @@ namespace CelebWeather
                 {
                     Serial.printf("\n/!\\ Too many bytes to write ! (%d > %d)\n", bytesCount, maxBytes);
                     delete[] batches;
-                    delete[] bytes;
                     return 0;
                 }
             }
