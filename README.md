@@ -34,16 +34,13 @@ Les connexions sont les suivantes:
 |   4   | RESET |       |       |              |              |
 |   5   |  NSS  |       |       |              |              |
 |  12   |       |       | Leg 2 |              |              |
-|  13   | DIO0  |       |       |              |              |
 |  18   |  SCK  |       |       |              |              |
 |  19   | MISO  |       |       |              |              |
 |  21   |       | Leg 2 |       |              |              |
 |  23   | MOSI  |       |       |              |              |
-|  26   | DIO2  |       |       |              |              |
-|  27   | DIO3  |       |       |              |              |
 |  32   |       |       |       | Long leg (-) |              |
 
-13, 26 et 27 ne sont probablement pas utiles mais repris d'un montage pour [RFLink32](https://github.com/cpainchaud/RFLink32)
+La deuxième broche résistance pour la LED AP Status est connectée à la patte courte (+) de la LED AP status
 
 ## Développement
 
