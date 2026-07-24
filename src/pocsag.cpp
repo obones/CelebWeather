@@ -344,7 +344,7 @@ namespace CelebWeather
                 if (!pocctx.frm_end)
                 {
                     Serial.printf("%02x ", tmp);
-                    bytes[bytesCount++] = tmp;
+                    bytes[bytesCount++] = ~tmp;
                 }
 
                 if (bytesCount > maxBytes)
