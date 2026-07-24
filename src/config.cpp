@@ -23,7 +23,7 @@ namespace CelebWeather
 
         // not managed via the portal
         char Department[DepartmentLength] = "";
-        int RefreshPeriodSeconds = 60 * 60;
+        int RefreshPeriodSeconds = 10 * 60;
 
         void reset()
         {
