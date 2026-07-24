@@ -283,7 +283,7 @@ namespace CelebWeather
                 if (Config::Department[0] == 0)
                     retrieveDepartment();
 
-                // as forceRefresh is volatile, we must store it locally to avoid a change a value while we work and reset
+                // as forceRefresh is volatile, we must store it locally to avoid a change of value while we work and reset
                 // it as fast as possible to allow quick reuse of the functionality.
                 bool localForceRefresh = forceRefresh;
                 forceRefresh = false;
