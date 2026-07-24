@@ -22,8 +22,8 @@ namespace CelebWeather
         //#define FREQUENCY 433.0
         #define FREQUENCY 466.206250
 
-        #define CONFIG_FSK (RH_RF69_DATAMODUL_DATAMODE_PACKET | RH_RF69_DATAMODUL_MODULATIONTYPE_FSK | RH_RF69_DATAMODUL_MODULATIONSHAPING_FSK_NONE)
-        #define CONFIG_NOWHITE (RH_RF69_PACKETCONFIG1_PACKETFORMAT_VARIABLE | RH_RF69_PACKETCONFIG1_DCFREE_NONE | RH_RF69_PACKETCONFIG1_ADDRESSFILTERING_NONE)
+        #define RH_RF69_PACKETCONFIG1_PACKETFORMAT_FIXED 0x00
+        #define RH_RF69_PACKETCONFIG1_CRC_OFF 0x00
 
         RH_RF69 rf69(RFM69_CS, RFM69_INT);
 
@@ -64,19 +64,44 @@ namespace CelebWeather
             if (!setFrequency(FREQUENCY))
                 Serial.println("setFrequency failed");
 
-            // Set registers for 1200bps with 4.5KHz deviation.
-            // See the notes folder for an explanation of the values.
-            const RH_RF69::ModemConfig cfg = { 0x00, 0x68, 0x2b, 0x00, 0x4a, 0xe2, 0xe2, CONFIG_NOWHITE };
+            const int16_t FSTEP = 61;
+            const int16_t DevRegister = round(4500.0 / FSTEP); // See datasheet 3.3.3
+            Serial.printf("DevRegister: %2x\n", DevRegister);
+
+            const RH_RF69::ModemConfig cfg =
+                {
+                    // register RH_RF69_REG_02_DATAMODUL (packet mode, FSK modulation without gaussian shaping)
+                    RH_RF69_DATAMODUL_DATAMODE_PACKET | RH_RF69_DATAMODUL_MODULATIONTYPE_FSK | RH_RF69_DATAMODUL_MODULATIONSHAPING_FSK_NONE,
+                    // register RH_RF69_REG_03_BITRATEMSB (MSB value for 1200bps, see table 9 from datasheet)
+                    0x68,
+                    // register RH_RF69_REG_04_BITRATELSB (LSB value for 1200bps, see table 9 from datasheet)
+                    0x2b,
+                    // register RH_RF69_REG_05_FDEVMSB (deviation most significant bits)
+                    DevRegister >> 8,
+                    // register RH_RF69_REG_06_FDEVLSB (deviation least significant bits)
+                    DevRegister & 0xFF,
+                    // register RH_RF69_REG_19_RXBW (reception is not used, default value from datasheet)
+                    0x55,
+                    // register RH_RF69_REG_1A_AFCBW (reception is not used, recommended default value from datasheet)
+                    0x8b,
+                    // register RH_RF69_REG_37_PACKETCONFIG1
+                    RH_RF69_PACKETCONFIG1_PACKETFORMAT_FIXED | RH_RF69_PACKETCONFIG1_DCFREE_NONE |
+                    RH_RF69_PACKETCONFIG1_CRC_OFF | RH_RF69_PACKETCONFIG1_CRCAUTOCLEAROFF |
+                    RH_RF69_PACKETCONFIG1_ADDRESSFILTERING_NONE
+                };
+
             rf69.setModemRegisters(&cfg);
+            rf69.spiWrite(RH_RF69_REG_38_PAYLOADLENGTH, 0); // length = 0 -> with fixed packet format, this means unlimited length
+
             rf69.setPreambleLength(0);
-            rf69.setTxPower(0, false);
-            
+            rf69.setTxPower(-12, false);
+
             Serial.println("---> done");
         }
 
-        #define WAIT_BETWEEN_TRANSMIT 5000
+        #define WAIT_BETWEEN_TRANSMIT 2500
 
-        bool transmit(uint8_t* bytes, unsigned int len)
+        bool doTransmit(uint8_t* bytes, unsigned int len)
         {
             static unsigned long previousTransmitMillis = 0;
 
@@ -85,67 +110,79 @@ namespace CelebWeather
                 yield();
             }
 
-            //rf69.waitPacketSent();
             rf69.setModeIdle();
 
             // force FIFO clear
             rf69.spiWrite(RH_RF69_REG_28_IRQFLAGS2, RH_RF69_IRQFLAGS2_FIFOOVERRUN);
             rf69.spiWrite(RH_RF69_REG_28_IRQFLAGS2, 0);
 
-            Serial.println("  Waiting for CAD");
-            //while (!rf69.waitCAD());
-
-            // Set FifoThreshold to 32 bytes (out of 68)
-            rf69.spiWrite(RH_RF69_REG_3C_FIFOTHRESH, 0xa0);
+            // set TxStartCondition to 1 (NotEmpty) and FifoThreshold to 48 bytes
+            rf69.spiWrite(RH_RF69_REG_3C_FIFOTHRESH, RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY | (48 & RH_RF69_FIFOTHRESH_FIFOTHRESHOLD));
 
             // Turn off sync bits
             rf69.spiWrite(RH_RF69_REG_2E_SYNCCONFIG, 0);
 
-            // Set exit condition to fifo empty
-            rf69.spiWrite(RH_RF69_REG_3B_AUTOMODES, RH_RF69_AUTOMODE_ENTER_COND_NONE | RH_RF69_AUTOMODE_EXIT_COND_FIFO_EMPTY | RH_RF69_AUTOMODE_INTERMEDIATE_MODE_SLEEP); // 0x04
+            // We would love to use automatic mode to go to TX when FIFO threshold level is reached and
+            // exit when FIFO is empty but actual usage showed that the module never gets out of the idle
+            // mode so we handle things ourselves
+            //rf69.spiWrite(RH_RF69_REG_3B_AUTOMODES, RH_RF69_AUTOMODE_ENTER_COND_FIFO_LEVEL | RH_RF69_AUTOMODE_EXIT_COND_FIFO_EMPTY | RH_RF69_AUTOMODE_INTERMEDIATE_MODE_TX);
 
-            // invert bits
-            uint8_t* data_i = bytes;
-            /*uint8_t data_i[len];
-            for (int i = 0; i < len; i++)
-                data_i[i] = ~bytes[i];*/
+            uint8_t irq_flags = rf69.spiRead(RH_RF69_REG_28_IRQFLAGS2);
+            Serial.printf("  irq_flags before loop: %2x\n", irq_flags);
 
-            Serial.println("  Starting send loop");
-            int b = 0;
             bool first = true;
-            while (b < len)
+            int bytesSent = 0;
+            uint8_t previousIrqFlags = 0;
+            while (bytesSent < len)
             {
                 uint8_t irq_flags = rf69.spiRead(RH_RF69_REG_28_IRQFLAGS2);
-                uint8_t fifo_full = irq_flags % RH_RF69_IRQFLAGS2_FIFOFULL;
-                uint8_t fifo_level = irq_flags % RH_RF69_IRQFLAGS2_FIFOLEVEL;
-                uint8_t fifo_overrun = irq_flags % RH_RF69_IRQFLAGS2_FIFOOVERRUN;
+                uint8_t fifo_full = irq_flags & RH_RF69_IRQFLAGS2_FIFOFULL;
+                uint8_t fifo_level = irq_flags & RH_RF69_IRQFLAGS2_FIFOLEVEL;
+                uint8_t fifo_overrun = irq_flags & RH_RF69_IRQFLAGS2_FIFOOVERRUN;
+
+                //if (previousIrqFlags != irq_flags)
+                //    Serial.printf("  irq_flags changed: %2x != %2x\n", previousIrqFlags, irq_flags);
+
                 if (fifo_overrun)
                 {
                     Serial.println("  /!\\ FIFO overrun !");
                     return false;
                 }
 
-                if (fifo_full || fifo_level)
+                if (fifo_full)
                 {
-                    //Serial.println("    FIFO is above level!");
+                    //if (previousIrqFlags != irq_flags)
+                    //    Serial.println("    FIFO is full!");
+                    previousIrqFlags = irq_flags;
+                    continue;
+                }
+                if (fifo_level)
+                {
+                    //if (previousIrqFlags != irq_flags)
+                    //    Serial.println("    FIFO is above level!");
+                    previousIrqFlags = irq_flags;
                     continue;
                 }
 
-                uint8_t _len = 16;
-                if (_len > (len - b))
-                    _len = len - b;
+                previousIrqFlags = irq_flags;
 
-                //Serial.printf("  Putting %d bytes in FIFO\n", _len);
-                rf69.spiBurstWrite(RH_RF69_REG_00_FIFO | RH_RF69_SPI_WRITE_MASK, &(data_i[b]), _len);
-                b += _len;
+                uint8_t lengthToSend = (first) ? 64 : 16;
+                if (lengthToSend > (len - bytesSent))
+                    lengthToSend = len - bytesSent;
+
+                //Serial.printf("  Putting %d bytes in FIFO\n", lengthToSend);
+                rf69.spiBurstWrite(RH_RF69_REG_00_FIFO | RH_RF69_SPI_WRITE_MASK, &(bytes[bytesSent]), lengthToSend);
+                bytesSent += lengthToSend;
 
                 if (first)
                 {
-                    //Serial.println("  First data sent to FIFO, starting TX");
+                    Serial.println("  First data sent to FIFO, starting TX");
                     rf69.setModeTx();
                 }
                 first = false;
             }
+
+            Serial.printf("  irq_flags after loop: %2x\n", rf69.spiRead(RH_RF69_REG_28_IRQFLAGS2));
 
             Serial.println("  Waiting for FIFO to get empty");
             bool fifoNotEmpty = true;
@@ -158,7 +195,28 @@ namespace CelebWeather
             Serial.println("  Returning to idle mode");
             rf69.setModeIdle();
 
+            previousTransmitMillis = millis();
             return true;
+        }
+
+        bool transmit(uint8_t* bytes, unsigned int len)
+        {
+            bool result = true;
+
+            // Use an array of frequencies to make it easier to debug on different possible frequencies
+            // even if only one will be used in the end product.
+            const float frequencies[] = { FREQUENCY }; // { 466.200, 466.202, 466.208, 466.210, 466.220 };
+            constexpr int frequenciesLength = sizeof(frequencies) / sizeof(frequencies[0]);
+            for (int frequencyIndex = 0; frequencyIndex < frequenciesLength; frequencyIndex++)
+            {
+                float frequency = frequencies[frequencyIndex];
+                Serial.printf("===== Trying %f ====\n", frequency);
+                setFrequency(frequency);
+                delay(2000);
+                result &= doTransmit(bytes, len);
+            }
+
+            return result;
         }
     }
 }
