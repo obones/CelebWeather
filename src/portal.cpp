@@ -48,6 +48,7 @@ namespace CelebWeather
 
         void setup()
         {
+            Serial.println("===> Setting up portal");
             // -- Setting up parameters
             iotWebConf.getApTimeoutParameter()->visible = true;
             iotWebConf.addSystemParameter(&ntpServerName);
@@ -73,6 +74,7 @@ namespace CelebWeather
             server.on("/", handleRoot);
             server.on("/config", []{ iotWebConf.handleConfig(); });
             server.onNotFound([](){ iotWebConf.handleNotFound(); });
+            Serial.println("---> done");
         }
 
         void loop()

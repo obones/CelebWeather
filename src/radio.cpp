@@ -51,6 +51,7 @@ namespace CelebWeather
 
         void setup()
         {
+            Serial.println("===> Setting up radio");
             pinMode(RFM69_RST, OUTPUT);
             pinMode(RFM69_CS, OUTPUT);
             pinMode(RFM69_INT, INPUT);
@@ -69,6 +70,8 @@ namespace CelebWeather
             rf69.setModemRegisters(&cfg);
             rf69.setPreambleLength(0);
             rf69.setTxPower(0, false);
+            
+            Serial.println("---> done");
         }
 
         #define WAIT_BETWEEN_TRANSMIT 5000

@@ -51,6 +51,7 @@ namespace CelebWeather
 
         void setup()
         {
+            Serial.println("===> Setting up status");
             if (gettimeofday(&TimeAtBoot, NULL) != 0)
             {
                 Serial.println(F("Status::setup() -> Failed to obtain time"));
@@ -58,6 +59,7 @@ namespace CelebWeather
 
             pinMode(FORCE_REFRESH_PIN, INPUT_PULLUP);
             ::attachInterrupt(digitalPinToInterrupt(FORCE_REFRESH_PIN), &forceRefreshPinISR, CHANGE);
+            Serial.println("---> done");
         }
 
         void retrieveDepartment()

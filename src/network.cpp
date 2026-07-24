@@ -111,6 +111,7 @@ namespace CelebWeather
 
         void setup()
         {
+            Serial.println("===> Setting up network");
             Serial.print("WiFi power is currently ");
             Serial.println(WiFi.getTxPower());
             Serial.println("WiFi power set to WIFI_POWER_19_5dBm");
@@ -118,6 +119,7 @@ namespace CelebWeather
 
             WiFi.onEvent(eventHandler_WiFiStationGotIp, ARDUINO_EVENT_WIFI_STA_GOT_IP);
             WiFi.onEvent(eventHandler_WiFiStationLostIp, ARDUINO_EVENT_WIFI_STA_LOST_IP);
+            Serial.println("---> done");
         }
     }
 }
