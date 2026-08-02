@@ -66,7 +66,7 @@ namespace CelebWeather
         {
             String department = "75";
 
-            Serial.println("Retrieving department");
+            /*Serial.println("Retrieving department");
             WiFiClient wifiClient;   // wifi client object
             wifiClient.stop(); // close connection before sending a new request
             HTTPClient http;
@@ -123,7 +123,7 @@ namespace CelebWeather
                 String errorString = http.errorToString(httpCode);
                 Serial.printf("connection failed, error %d: %s\n", httpCode, errorString.c_str());
                 Serial.println(http.getString());
-            }
+            }*/
 
             Serial.printf("Department found: %s\n", department.c_str());
             strcpy(Config::Department, department.c_str());
