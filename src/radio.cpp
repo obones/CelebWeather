@@ -49,6 +49,63 @@ namespace CelebWeather
             delay(10);
         }
 
+        #define WAIT_BETWEEN_RECONFIGURE 5 * 60 * 1000
+
+        void reconfigureIfNeeded()
+        {
+            static unsigned long previousReconfigureMillis = 0;
+
+            Serial.println("reconfigureIfNeeded: start");
+            if ((previousReconfigureMillis == 0) || (millis() - previousReconfigureMillis > WAIT_BETWEEN_RECONFIGURE))
+            {
+                Serial.println("reconfigureIfNeeded: reset");
+                reset();
+                Serial.println("reconfigureIfNeeded: rf69.init");
+                if (!rf69.init())
+                    Serial.println("reconfigureIfNeeded: init failed");
+
+                const int16_t FSTEP = 61;
+                const int16_t DevRegister = round(4500.0 / FSTEP); // See datasheet 3.3.3
+                Serial.printf("DevRegister: %2x\n", DevRegister);
+
+                const RH_RF69::ModemConfig cfg =
+                    {
+                        // register RH_RF69_REG_02_DATAMODUL (packet mode, FSK modulation without gaussian shaping)
+                        RH_RF69_DATAMODUL_DATAMODE_PACKET | RH_RF69_DATAMODUL_MODULATIONTYPE_FSK | RH_RF69_DATAMODUL_MODULATIONSHAPING_FSK_NONE,
+                        // register RH_RF69_REG_03_BITRATEMSB (MSB value for 1200bps, see table 9 from datasheet)
+                        0x68,
+                        // register RH_RF69_REG_04_BITRATELSB (LSB value for 1200bps, see table 9 from datasheet)
+                        0x2b,
+                        // register RH_RF69_REG_05_FDEVMSB (deviation most significant bits)
+                        DevRegister >> 8,
+                        // register RH_RF69_REG_06_FDEVLSB (deviation least significant bits)
+                        DevRegister & 0xFF,
+                        // register RH_RF69_REG_19_RXBW (reception is not used, default value from datasheet)
+                        0x55,
+                        // register RH_RF69_REG_1A_AFCBW (reception is not used, recommended default value from datasheet)
+                        0x8b,
+                        // register RH_RF69_REG_37_PACKETCONFIG1
+                        RH_RF69_PACKETCONFIG1_PACKETFORMAT_FIXED | RH_RF69_PACKETCONFIG1_DCFREE_NONE |
+                        RH_RF69_PACKETCONFIG1_CRC_OFF | RH_RF69_PACKETCONFIG1_CRCAUTOCLEAROFF |
+                        RH_RF69_PACKETCONFIG1_ADDRESSFILTERING_NONE
+                    };
+
+                Serial.println("reconfigureIfNeeded: setModemRegisters");
+                rf69.setModemRegisters(&cfg);
+                rf69.spiWrite(RH_RF69_REG_38_PAYLOADLENGTH, 0); // length = 0 -> with fixed packet format, this means unlimited length
+
+                Serial.println("reconfigureIfNeeded: setPreambleLength");
+                rf69.setPreambleLength(0);
+                Serial.println("reconfigureIfNeeded: setTxPower");
+                rf69.setTxPower(-12, false);
+                Serial.println("reconfigureIfNeeded: done");
+
+                delay(1000);
+
+                previousReconfigureMillis = millis();
+            }
+        }
+
         void setup()
         {
             Serial.println("===> Setting up radio");
@@ -56,45 +113,8 @@ namespace CelebWeather
             pinMode(RFM69_CS, OUTPUT);
             pinMode(RFM69_INT, INPUT);
 
-            if (!rf69.init())
-                Serial.println("init failed");
-
-            reset();
-
-            if (!setFrequency(FREQUENCY))
-                Serial.println("setFrequency failed");
-
-            const int16_t FSTEP = 61;
-            const int16_t DevRegister = round(4500.0 / FSTEP); // See datasheet 3.3.3
-            Serial.printf("DevRegister: %2x\n", DevRegister);
-
-            const RH_RF69::ModemConfig cfg =
-                {
-                    // register RH_RF69_REG_02_DATAMODUL (packet mode, FSK modulation without gaussian shaping)
-                    RH_RF69_DATAMODUL_DATAMODE_PACKET | RH_RF69_DATAMODUL_MODULATIONTYPE_FSK | RH_RF69_DATAMODUL_MODULATIONSHAPING_FSK_NONE,
-                    // register RH_RF69_REG_03_BITRATEMSB (MSB value for 1200bps, see table 9 from datasheet)
-                    0x68,
-                    // register RH_RF69_REG_04_BITRATELSB (LSB value for 1200bps, see table 9 from datasheet)
-                    0x2b,
-                    // register RH_RF69_REG_05_FDEVMSB (deviation most significant bits)
-                    DevRegister >> 8,
-                    // register RH_RF69_REG_06_FDEVLSB (deviation least significant bits)
-                    DevRegister & 0xFF,
-                    // register RH_RF69_REG_19_RXBW (reception is not used, default value from datasheet)
-                    0x55,
-                    // register RH_RF69_REG_1A_AFCBW (reception is not used, recommended default value from datasheet)
-                    0x8b,
-                    // register RH_RF69_REG_37_PACKETCONFIG1
-                    RH_RF69_PACKETCONFIG1_PACKETFORMAT_FIXED | RH_RF69_PACKETCONFIG1_DCFREE_NONE |
-                    RH_RF69_PACKETCONFIG1_CRC_OFF | RH_RF69_PACKETCONFIG1_CRCAUTOCLEAROFF |
-                    RH_RF69_PACKETCONFIG1_ADDRESSFILTERING_NONE
-                };
-
-            rf69.setModemRegisters(&cfg);
-            rf69.spiWrite(RH_RF69_REG_38_PAYLOADLENGTH, 0); // length = 0 -> with fixed packet format, this means unlimited length
-
-            rf69.setPreambleLength(0);
-            rf69.setTxPower(-12, false);
+            Serial.println("calling reconfigure if needed");
+            reconfigureIfNeeded();
 
             Serial.println("---> done");
         }
@@ -201,6 +221,8 @@ namespace CelebWeather
 
         bool transmit(uint8_t* bytes, unsigned int len)
         {
+            reconfigureIfNeeded();
+
             bool result = true;
 
             // Use an array of frequencies to make it easier to debug on different possible frequencies
@@ -210,7 +232,7 @@ namespace CelebWeather
             for (int frequencyIndex = 0; frequencyIndex < frequenciesLength; frequencyIndex++)
             {
                 float frequency = frequencies[frequencyIndex];
-                Serial.printf("===== Trying %f ====\n", frequency);
+                Serial.printf("----- Trying %f ----\n", frequency);
                 setFrequency(frequency);
                 delay(2000);
                 result &= doTransmit(bytes, len);
