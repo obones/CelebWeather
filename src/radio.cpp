@@ -119,7 +119,7 @@ namespace CelebWeather
             Serial.println("---> done");
         }
 
-        #define WAIT_BETWEEN_TRANSMIT 2500
+        #define WAIT_BETWEEN_TRANSMIT 4000
 
         bool doTransmit(uint8_t* bytes, unsigned int len)
         {
