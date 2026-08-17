@@ -341,7 +341,7 @@ namespace CelebWeather
 
             // department
             {
-                genfrm->quartetFrame[0] = 0x4;
+                genfrm->quartetFrame[0] = 0x0;
                 genfrm->quartetFrame[1] = (department>>4) & 0xF;
                 genfrm->quartetFrame[2] = (department   ) & 0xF;
                 genfrm->quartetFrame[3] = 0x0;
@@ -358,7 +358,7 @@ namespace CelebWeather
                 int i = 0;
                 while( i < genfrm->quartets_cnt )
                 {
-                    set_quartet( (unsigned char*)(genfrm->decodeFrame), i, genfrm->quartetFrame[i]);
+                    set_quartet(genfrm->decodeFrame, i, genfrm->quartetFrame[i]);
                     i++;
                 }
 
