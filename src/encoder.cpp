@@ -236,9 +236,7 @@ namespace CelebWeather
                 switch(variable->variable())
                 {
                     case openmeteo_sdk::Variable::temperature:
-                        // This should work but for some reason, min and max are returned as none and efi...
-                        // Reported at https://github.com/open-meteo/open-meteo/issues/1985
-                        /*switch(variable->aggregation())
+                        switch(variable->aggregation())
                         {
                             case openmeteo_sdk::Aggregation::minimum:
                                 minTempVariable = variable;
@@ -246,11 +244,7 @@ namespace CelebWeather
                             case openmeteo_sdk::Aggregation::maximum:
                                 maxTempVariable = variable;
                                 break;
-                        }*/
-                        if (minTempVariable == nullptr)
-                            minTempVariable = variable;
-                        else if (maxTempVariable == nullptr)
-                            maxTempVariable = variable;
+                        }
                         break;
                     case openmeteo_sdk::Variable::weather_code:
                         wmoCodeVariable = variable;
