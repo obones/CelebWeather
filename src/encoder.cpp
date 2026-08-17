@@ -207,6 +207,19 @@ namespace CelebWeather
             }
         }
 
+        uint8_t getEncodedProbability(float value)
+        {
+            //  rounded value:          0   5   10   20    25   30   40  50  60  70   75    80   90   95   99
+            const float thresholds[] = { 2.5, 7.5, 15, 22.5, 27.5, 35, 45, 55, 65, 72.5, 77.5, 85, 92.5, 97 };
+            constexpr int thresholdsLength = sizeof(thresholds) / sizeof(thresholds[0]);
+
+            for (int index = 0; index < thresholdsLength; index++)
+                if (value < thresholds[index])
+                    return index;
+
+            return 0xE;
+        }
+
         int gen_forecast(unsigned char * quartets, const openmeteo_sdk::WeatherApiResponse *forecast)
         {
             // format for one day
@@ -222,6 +235,7 @@ namespace CelebWeather
             const openmeteo_sdk::VariableWithValues *minTempVariable = nullptr;
             const openmeteo_sdk::VariableWithValues *maxTempVariable = nullptr;
             const openmeteo_sdk::VariableWithValues *wmoCodeVariable = nullptr;
+            const openmeteo_sdk::VariableWithValues *rainProbabilityVariable = nullptr;
 
             size_t variablesLength = 0;
 
@@ -249,6 +263,9 @@ namespace CelebWeather
                     case openmeteo_sdk::Variable::weather_code:
                         wmoCodeVariable = variable;
                         break;
+                    case openmeteo_sdk::Variable::precipitation_probability:
+                        rainProbabilityVariable = variable;
+                        break;
                 }
             }
 
@@ -267,6 +284,12 @@ namespace CelebWeather
             if (wmoCodeVariable == nullptr)
             {
                 Serial.println("WMOCode variable not found!");
+                return 0;
+            }
+
+            if (rainProbabilityVariable == nullptr)
+            {
+                Serial.println("Rain probability variable not found!");
                 return 0;
             }
 
@@ -328,7 +351,51 @@ namespace CelebWeather
                 }
             }
 
-            return quartetsPerDay * dayCount;
+            // Rain probability is next with 5 quartets repeated 6 times of this:
+            //   a  ?
+            //   b  ?
+            //   P  rain probability for the day, from 0 to E
+            //   c  ?
+            //   d  ?
+            //
+            // The P value is a mapping to these percentages: 0, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 99
+            //
+            // It is then followed by a two quartets checksum and a constant two quartets trailer
+            //
+            constexpr int rainProbabilityQuartetsPerDay = 5;
+            int quartetIndex = quartetsPerDay * dayCount;
+            for (int dayIndex = 0; dayIndex < dayCount; dayIndex++)
+            {
+                float dayProbability = 0;
+
+                for (int periodIndex = 0; periodIndex < periodsPerDay; periodIndex++)
+                {
+                    int valueIndex = dayIndex * periodsPerDay + periodIndex;
+
+                    float periodProbability = rainProbabilityVariable->values()->Get(valueIndex);
+
+                    dayProbability = max(dayProbability, periodProbability);
+                }
+
+                quartets[quartetIndex++] = 0x3;
+                quartets[quartetIndex++] = 0xC;
+                quartets[quartetIndex++] = getEncodedProbability(dayProbability);
+                quartets[quartetIndex++] = 0x6;
+                quartets[quartetIndex++] = 0xC;
+            }
+
+            uint8_t checksum = 7;
+            for (int checksumIndex = quartetsPerDay * dayCount; checksumIndex < quartetIndex; checksumIndex++)
+            {
+                checksum += quartets[checksumIndex];
+            }
+            quartets[quartetIndex++] = (checksum >> 4)  & 0x0F;
+            quartets[quartetIndex++] = checksum & 0x0F;
+
+            quartets[quartetIndex++] = 0x0;
+            quartets[quartetIndex++] = 0x0B;
+
+            return quartetsPerDay * dayCount + rainProbabilityQuartetsPerDay * dayCount + 2 + 2;
         }
 
         int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, int8_t department, unsigned char* destFrame, size_t destFrameSize)
