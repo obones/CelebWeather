@@ -87,7 +87,7 @@ namespace CelebWeather
         }
 
         // Generate and encode current time frame.
-        int gen_current_time(unsigned char * quartets)
+        int gen_current_time(unsigned char * quartets, int8_t department)
         {
             int i;
             time_t t = time(NULL);
@@ -137,7 +137,59 @@ namespace CelebWeather
             }
             quartets[8] = sum & 0xF;
 
-            return 9;
+            Serial.printf("Encoding department %d\n", department);
+            int quartetIndex = 9;
+
+            /*
+            Ideally, we would use this bit field structure as it avoids the bit manipulations below.
+            But we can't rely on the field orders inside the structure, the C++ standard clearly
+            stipulates that it is "implementation specific"
+
+            typedef struct
+            {
+                uint8_t header: 4;  // header, set to 0
+                uint8_t period: 5;  // minutes between each department forecast, set to 12
+                uint8_t count: 5;   // number of departments, set to 1
+                uint8_t department: 7;  // the department number set as 7 bits
+            } DepartmentInfo;
+            */
+
+            quartets[quartetIndex++] = 0x0;
+            quartets[quartetIndex++] = 0x0;
+            quartets[quartetIndex++] = 0x0;
+            quartets[quartetIndex++] = 0x6;   // take one bit from the next quartet to get the period between department forecasts (12 minutes)
+            quartets[quartetIndex++] = 0x0;
+
+            // the two highest bits are merged with the previous 3 bits to get the number of departments (always 1 here)
+            // the two lowest bits are the two most significant bits of the department number, out of 7 bits
+            constexpr uint8_t bitsPerDepartment = 7;
+            uint8_t nextQuartet = 0b0100 | ((department >> bitsPerDepartment - 2) & 0b0011);
+            quartets[quartetIndex++] = nextQuartet;
+
+            // next quartet contains the middle 4 bits of the department
+            quartets[quartetIndex++] = (department >> 1) & 0b1111;
+
+            // next quartet is the least significant bit, left aligned in the quartet, padded with zeroes
+            quartets[quartetIndex++] = (department << 3) & 0b1000;
+
+            // final quartet is the constant trailer
+            quartets[quartetIndex++] = 0x5;
+
+            // then comes the two quartets checksum
+            uint8_t checksum = 7;
+            for (int checksumIndex = 9; checksumIndex < quartetIndex; checksumIndex++)
+            {
+                checksum += quartets[checksumIndex];
+            }
+
+            quartets[quartetIndex++] = (checksum >> 4)  & 0x0F;
+            quartets[quartetIndex++] = checksum & 0x0F;
+
+            // and finally the two constant trailing quartets
+            quartets[quartetIndex++] = 0x2;
+            quartets[quartetIndex++] = 0xD;
+
+            return quartetIndex;
         }
 
         int getPictogramIndexFromWMOCode(int WMOCode, bool isDay)
@@ -472,7 +524,7 @@ namespace CelebWeather
             return destFrameIndex;
         }
 
-        int EncodeTime(unsigned char* destFrame, size_t destFrameSize)
+        int EncodeTime(int8_t department, unsigned char* destFrame, size_t destFrameSize)
         {
             int destFrameIndex = 0;
 
@@ -480,12 +532,14 @@ namespace CelebWeather
             if(!genfrm)
                 return 0;
 
-            genfrm->quartets_cnt = gen_current_time(genfrm->quartetFrame);
+            genfrm->quartets_cnt = gen_current_time(genfrm->quartetFrame, department);
 
             int i = 0;
+
+            memset(genfrm->decodeFrame, 0, sizeof(genfrm->decodeFrame));
             while( i < genfrm->quartets_cnt )
             {
-                set_quartet( (unsigned char*)(genfrm->decodeFrame), i, genfrm->quartetFrame[i]);
+                set_quartet(genfrm->decodeFrame, i, genfrm->quartetFrame[i]);
                 i++;
             }
 
