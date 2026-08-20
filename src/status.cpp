@@ -71,7 +71,7 @@ namespace CelebWeather
         {
             String department = "75";
 
-            /*Serial.println("Retrieving department");
+            Serial.println("Retrieving department");
             WiFiClient wifiClient;   // wifi client object
             wifiClient.stop(); // close connection before sending a new request
             HTTPClient http;
@@ -128,7 +128,7 @@ namespace CelebWeather
                 String errorString = http.errorToString(httpCode);
                 Serial.printf("connection failed, error %d: %s\n", httpCode, errorString.c_str());
                 Serial.println(http.getString());
-            }*/
+            }
 
             Serial.printf("Department found: %s\n", department.c_str());
             strcpy(Config::Department, department.c_str());
@@ -152,10 +152,13 @@ namespace CelebWeather
 
         void sendTimeSyncMessage()
         {
+            Serial.println("========== Sending time ===========");
+
             const int maxFrameSize = 100;
             unsigned char frame[maxFrameSize] = {};
 
-            int actualFrameSize = Encoder::EncodeTime(frame, maxFrameSize);
+            int8_t department = atoi(Config::Department);
+            int actualFrameSize = Encoder::EncodeTime(department, frame, maxFrameSize);
 
             Serial.print("Encoded time sync: ");
             for(int index = 0; index < actualFrameSize; index++)
@@ -169,6 +172,8 @@ namespace CelebWeather
 
         void transmitForecast(const unsigned char* frame, int frameSize)
         {
+            Serial.println("========== Sending forecast ===========");
+
             Serial.print("Encoded forecast: ");
             for(int index = 0; index < frameSize; index++)
             {
@@ -210,7 +215,7 @@ namespace CelebWeather
                 struct tm timeinfo;
                 if(!getLocalTime(&timeinfo))
                 {
-                    Serial.println(F("Status::retrieveAndSendForecastMessage() -> Failed to obtain time"));
+                    Serial.println(F("Status::retrieveForecast() -> Failed to obtain time"));
                     return;
                 }
                 timeinfo.tm_hour = 3;
@@ -280,235 +285,23 @@ namespace CelebWeather
             }
         }
 
-        void doSendForecast(const openmeteo_sdk::WeatherApiResponse* forecast)
-        {
-            transmitForecast(forecast, 75);
-            int8_t department = atoi(Config::Department);
-            if (department != 75)
-                transmitForecast(forecast, department);
-        }
-
-        void retrieveAndSendForecastMessage()
-        {
-            retrieveForecast(doSendForecast);
-            /*if (Config::OpenMeteoBaseURI[0] != 0)
-            {
-                Serial.println("Retrieving Open-Meteo forecast");
-
-                WiFiClient wifiClient;   // wifi client object
-                wifiClient.stop(); // close connection before sending a new request
-                HTTPClient http;
-                http.setTimeout(15000);
-                http.setConnectTimeout(15000);
-
-                String uriTimeZone = Config::Timezone;
-                uriTimeZone.replace("/", "%2F");
-
-                // we get values starting from today's 03:00 for 6 days (including the current one)
-                struct tm timeinfo;
-                if(!getLocalTime(&timeinfo))
-                {
-                    Serial.println(F("Status::retrieveAndSendForecastMessage() -> Failed to obtain time"));
-                    return;
-                }
-                timeinfo.tm_hour = 3;
-                timeinfo.tm_min = 0;
-                timeinfo.tm_sec = 0;
-                char timeBuffer[25] = "";
-                strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H%%3A%M%%3A%S", &timeinfo);
-
-                String startDate = timeBuffer;
-
-                timeinfo.tm_mday += 5;  // strftime does not handle month overrun, so we must use mktime/localtime
-                timeinfo.tm_hour = 23;
-                timeinfo.tm_min = 59;
-                timeinfo.tm_sec = 59;
-                time_t endDateTime = mktime(&timeinfo);
-                struct tm *endDateTm = localtime(&endDateTime);
-                strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H%%3A%M%%3A%S", endDateTm);
-
-                String endDate = timeBuffer;
-
-                String uri =
-                    String(Config::OpenMeteoBaseURI) +
-                    "forecast" +
-                    "?latitude=" + Config::Latitude +
-                    "&longitude=" + Config::Longitude +
-                    "&temperature_unit=celsius&wind_speed_unit=ms&precipitation_unit=mm" +
-                    "&timezone=" + uriTimeZone +
-                    "&start_hour=" + startDate +
-                    "&end_hour=" + endDate +
-                    "&hourly=temperature_2m_min,temperature_2m_max,cloud_cover,snowfall,precipitation_probability,rain,weather_code" +
-                    "&temporal_resolution=hourly_6&format=flatbuffers";
-
-                Serial.printf("Uri: %s\n", uri.c_str());
-
-                http.begin(uri);
-                int httpCode = http.GET();
-
-                if (httpCode == HTTP_CODE_OK)
-                {
-                    int bufferSize = http.getSize();
-                    if (bufferSize < 0)
-                        bufferSize = 1.2 * 1024;
-
-                    uint8_t* buffer = reinterpret_cast<uint8_t*>(malloc(bufferSize));
-
-                    MemoryStream stream(buffer, bufferSize);
-
-                    http.writeToStream(&stream);
-
-                    Serial.printf("Received %d bytes\n", stream.getPosition());
-
-                    // this does a simple mapping to the buffer, no memory copy occurs
-                    auto forecast = openmeteo_sdk::GetSizePrefixedWeatherApiResponse(buffer);
-
-                    // Send first with 75 (and maybe bogus forecast), then retry with actual department if different
-                    transmitForecast(forecast, 75);
-                    int8_t department = atoi(Config::Department);
-                    if (department != 75)
-                        transmitForecast(forecast, department);
-
-                    free(buffer);
-                }
-                else
-                {
-                    String errorString = http.errorToString(httpCode);
-                    Serial.printf("connection failed, error %d: %s\n", httpCode, errorString.c_str());
-                    Serial.println(http.getString());
-                }
-                wifiClient.stop();
-                http.end();
-            }*/
-        }
-
-        void loopViaMillis()
-        {
-            static unsigned long previousForecastMillis = 0;
-            static unsigned long previousTimeSyncMillis = 0;
-            static bool canSendForecast = true;
-
-            if (Connected)
-            {
-                // retrieve department if needed
-                if (Config::Department[0] == 0)
-                    retrieveDepartment();
-
-                // as forceRefresh is volatile, we must store it locally to avoid a change of value while we work and reset
-                // it as fast as possible to allow quick reuse of the functionality.
-                bool localForceRefresh = forceRefresh;
-                forceRefresh = false;
-
-                if (localForceRefresh)
-                    Serial.println("---- Refresh forced ---");
-
-                /*if ((millis() - previousTimeSyncMillis > 5 * 60 * 1000) || localForceRefresh)
-                {
-                    previousTimeSyncMillis = millis();
-
-                    sendTimeSyncMessage();
-
-                    if (canSendForecast)
-                        retrieveAndSendForecastMessage();
-
-                    canSendForecast = !canSendForecast;
-                }*/
-
-                // send time sync if time interval has elapsed
-                if ((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds * 1000) || localForceRefresh)
-                {
-                    previousTimeSyncMillis = millis();
-
-                    sendTimeSyncMessage();
-
-                    //canSendForecast = true;
-                }
-
-                // forecast messages are sent exactly at midpoint in the time sync period (ie 5 minutes later on a 10 minutes period)
-                //if ((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds / 2 * 1000) && canSendForecast)
-                //if ((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds / 2 * 1000) && (millis() - previousForecastMillis > Config::RefreshPeriodSeconds * 1000 - 500))
-                if ((millis() - previousForecastMillis > Config::RefreshPeriodSeconds * 2 * 1000) || localForceRefresh)
-                {
-                    previousForecastMillis = millis();
-                    //canSendForecast = false;
-
-                    retrieveAndSendForecastMessage();
-                }
-            }
-        }
-
         const int maxForecastFrameSize = 100;
         static int actualForecastFrameSize = 0;
         static unsigned char forecastFrame[maxForecastFrameSize] = {};
 
         void storeEncodedForecast(const openmeteo_sdk::WeatherApiResponse* forecast)
         {
-            actualForecastFrameSize = Encoder::EncodeForecast(forecast, 75, forecastFrame, maxForecastFrameSize);
+            int8_t department = atoi(Config::Department);
+            actualForecastFrameSize = Encoder::EncodeForecast(forecast, department, forecastFrame, maxForecastFrameSize);
         }
 
-        void loopViaTime()
+        void loopViaMillisRetrieveForecastHourlySendForecastEverySix()
         {
             constexpr int timeCheckPeriodSeconds = 1;
             constexpr int timeAndForecastMinuteOffset = 1;
 
             static unsigned long previousMillis = 0;
-            static int previousForecastHour = -1;
-            static int previousForecastMinute = -1;
-
-            if (Connected)
-            {
-                // as forceRefresh is volatile, we must store it locally to avoid a change of value while we work and reset
-                // it as fast as possible to allow quick reuse of the functionality.
-                bool localForceRefresh = forceRefresh;
-                forceRefresh = false;
-
-                if (localForceRefresh)
-                    Serial.println("---- Refresh forced ---");
-
-                // check time every timeCheckPeriodSeconds seconds
-                if ((millis() - previousMillis > timeCheckPeriodSeconds * 1000) || localForceRefresh)
-                {
-                    time_t t = time(NULL);
-                    struct tm tm;
-
-                    tm = *localtime(&t);
-
-                    // udpdate forecast from open-meteo every hour, at past 12
-                    // do it also if there was no previously stored forecast but don't do it in case of forced refresh
-                    // to avoid overloading the Open Meteo service
-                    if ((tm.tm_hour != previousForecastHour && tm.tm_min == 12) || (actualForecastFrameSize == 0))
-                    {
-                        previousForecastHour = tm.tm_hour;
-
-                        retrieveForecast(storeEncodedForecast);
-                    }
-
-                    // send the time over the air every 5 minutes at 01, 06, 11, 16...
-                    if (((tm.tm_min != previousForecastMinute) && (tm.tm_min % 5 == timeAndForecastMinuteOffset)) || localForceRefresh)
-                    {
-                        previousForecastMinute = tm.tm_min;
-
-                        sendTimeSyncMessage();
-
-                        // if it's a multiple 10 then also send the forecast
-                        if ((tm.tm_min % 10 == timeAndForecastMinuteOffset) || localForceRefresh)
-                        {
-                            transmitForecast(forecastFrame, actualForecastFrameSize);
-                        }
-                    }
-                }
-            }
-        }
-
-        void loopViaMillisRetrieveForecastHourly()
-        {
-            static unsigned long previousForecastMillis = 0;
-            static unsigned long previousTimeSyncMillis = 0;
-            constexpr int timeCheckPeriodSeconds = 1;
-            constexpr int timeAndForecastMinuteOffset = 1;
-
-            static unsigned long previousMillis = 0;
-            static int previousForecastHour = -1;
+            static int previousRetrieveForecastHour = -1;
 
             if (Connected)
             {
@@ -523,7 +316,6 @@ namespace CelebWeather
                 // retrieve department if needed
                 if (Config::Department[0] == 0)
                     retrieveDepartment();
-
 
                 // check time every timeCheckPeriodSeconds seconds
                 if ((millis() - previousMillis > timeCheckPeriodSeconds * 1000) || localForceRefresh)
@@ -536,42 +328,28 @@ namespace CelebWeather
                     // udpdate forecast from open-meteo every hour, at past a random minute
                     // do it also if there was no previously stored forecast but don't do it in case of forced refresh
                     // to avoid overloading the Open Meteo service
-                    if ((tm.tm_hour != previousForecastHour && tm.tm_min == retrieveForecastMinute) || (actualForecastFrameSize == 0))
+                    if ((tm.tm_hour != previousRetrieveForecastHour && tm.tm_min == retrieveForecastMinute) || (actualForecastFrameSize == 0))
                     {
-                        previousForecastHour = tm.tm_hour;
+                        previousRetrieveForecastHour = tm.tm_hour;
 
                         retrieveForecast(storeEncodedForecast);
                     }
-                }
 
-                // send forecast messages at half the rate of time sync
-                if ((millis() - previousForecastMillis > Config::RefreshPeriodSeconds /* * 2 */ * 1000) || localForceRefresh)
-                {
-                    Serial.println("========== Sending forecast ===========");
-                    previousForecastMillis = millis();
+                    // send time and predictions every 6 hours, one minute past the hour
+                    // or immediately in case of forced refresh
+                    if (((tm.tm_hour % 6 == 0) && (tm.tm_min == 1)) || localForceRefresh)
+                    {
+                        transmitForecast(forecastFrame, actualForecastFrameSize);
 
-                    transmitForecast(forecastFrame, actualForecastFrameSize);
-                /*}
+                        sendTimeSyncMessage();
 
-                // send time sync if time interval has elapsed
-                if ((millis() - previousTimeSyncMillis > Config::RefreshPeriodSeconds * 1000) || localForceRefresh)
-                {*/
-                    Serial.println("========== Sending time ===========");
-                    previousTimeSyncMillis = millis();
-
-                    sendTimeSyncMessage();
-                }
-
-                if (localForceRefresh)
-                {
-                    constexpr int afterRefreshOffset = 30 * 1000;
-
-                    previousTimeSyncMillis += afterRefreshOffset;
-                    previousForecastMillis += afterRefreshOffset;
-
-                    unsigned long startMillis = millis();
-                    while ((millis() - startMillis < afterRefreshOffset) && !forceRefresh)
-                        delay(1000);
+                        transmitForecast(forecastFrame, actualForecastFrameSize);
+                    }
+                    // if not already done just before, send time every 10 minutes at 01, 11, 21, 31...
+                    else if (tm.tm_min % 10 == 1)
+                    {
+                        sendTimeSyncMessage();
+                    }
                 }
             }
         }
@@ -670,10 +448,8 @@ namespace CelebWeather
 
         void loop()
         {
-            //loopViaMillis();
-            loopViaMillisRetrieveForecastHourly();
-            //loopViaTime();
             //loopReplay();
+            loopViaMillisRetrieveForecastHourlySendForecastEverySix();
         }
     }
 }
