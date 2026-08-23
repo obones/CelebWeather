@@ -16,7 +16,7 @@ Ce projet est un "travail en cours", voici les étapes envisagées, celles barr�
 3. ~~Lire les données Open-Meteo toutes les 60 minutes~~
 4. ~~Mettre en forme ces données pour créer un message POCSAG~~
 5. ~~Emettre ce message au bon format~~
-6. Constater que c'est bien lu par la station
+6. ~~Constater que c'est bien lu par la station~~
 
 ## Matériel
 
@@ -44,6 +44,12 @@ La deuxième broche résistance pour la LED AP Status est connectée à la patte
 
 ## Développement
 
+### IDE
+
+Ce projet est développé avec VSCode et le plugin PlatformIO
+
+Il suffit d'ouvrir le projet dans VSCode puis d'utiliser les raccourcis PlatformIO (Monitor, Build, Upload...) pour compiler le code et l'envoyer dans le module.
+
 ### FlatBuffers
 
 La communication avec Open-Meteo se fait via le format flatbuffers pour diminuer fortement le besoin en RAM et en CPU que le JSON nécessiterait.
@@ -68,6 +74,8 @@ Par ailleurs, à la section "General parameters", renseignez la latitude et la l
 La section "Open-Meteo parameters" contient des valeurs par défaut qui suffisent pour 99% des utilisateurs, ne la modifiez que si vous savez ce que vous faites.
 
 Une fois la configuration effectuée, déconnectez vous du point d'accès temporaire pour laisser le code s'exécuter. Il se connecte alors à votre WiFi et vous pourrez vous connecter à la page de configuration sur http://IP/config avec "admin" et le mot de passe que vous avez indiqué juste avant. La valeur de IP dépend de votre réseau local, elle est fournie en DHCP et vous devriez pouvoir la voir dans la page d'état de votre routeur WiFi.
+
+Plus détails sont disponibles dans la [documentation de démarrage](doc/startup.md)
 
 ### Boutons
 
