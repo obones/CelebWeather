@@ -33,7 +33,7 @@ Les connexions sont les suivantes:
 |  3V3  |  3.3  |       |       |              |     Leg 1    |
 |   4   | RESET |       |       |              |              |
 |   5   |  NSS  |       |       |              |              |
-|  12   |       |       | Leg 2 |              |              |
+|  13   |       |       | Leg 2 |              |              |
 |  18   |  SCK  |       |       |              |              |
 |  19   | MISO  |       |       |              |              |
 |  21   |       | Leg 2 |       |              |              |

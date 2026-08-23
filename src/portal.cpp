@@ -15,7 +15,7 @@ namespace CelebWeather
 {
     namespace Portal
     {
-        #define AP_CONFIG_PIN 12
+        #define AP_CONFIG_PIN 13
 
         // must be an Ouput capable pin, hence not 34 or 35
         #define AP_STATUS_PIN 32
