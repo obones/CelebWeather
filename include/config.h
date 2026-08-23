@@ -8,6 +8,9 @@
 */
 #ifndef CONFIG_H
 #define CONFIG_H
+
+#include <Arduino.h>
+
 namespace CelebWeather
 {
     namespace Config
@@ -27,11 +30,11 @@ namespace CelebWeather
         extern char Latitude[LatitudeLength];
         extern char Longitude[LongitudeLength];
         extern char Timezone[TimezoneLength];
-        extern char Department[DepartmentLength];
 
         extern char OpenMeteoBaseURI[OpenMeteoBaseURILength];
         extern char OpenMeteoAPIKey[OpenMeteoAPIKeyLength];
 
+        extern int8_t Department;
         extern int RefreshPeriodSeconds;
 
         void reset();

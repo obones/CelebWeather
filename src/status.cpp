@@ -69,7 +69,7 @@ namespace CelebWeather
 
         void retrieveDepartment()
         {
-            String department = "75";
+            String department = "";
 
             Serial.println("Retrieving department");
             WiFiClient wifiClient;   // wifi client object
@@ -130,8 +130,11 @@ namespace CelebWeather
                 Serial.println(http.getString());
             }
 
-            Serial.printf("Department found: %s\n", department.c_str());
-            strcpy(Config::Department, department.c_str());
+            Serial.printf("Department found: '%s'\n", department.c_str());
+
+            Config::Department = atoi(department.c_str());
+            if (Config::Department == 0)
+                Config::Department = 75;
         }
 
         void sendFrame(const unsigned char* frame, int frameSize)
@@ -157,8 +160,7 @@ namespace CelebWeather
             const int maxFrameSize = 100;
             unsigned char frame[maxFrameSize] = {};
 
-            int8_t department = atoi(Config::Department);
-            int actualFrameSize = Encoder::EncodeTime(department, frame, maxFrameSize);
+            int actualFrameSize = Encoder::EncodeTime(Config::Department, frame, maxFrameSize);
 
             Serial.print("Encoded time sync: ");
             for(int index = 0; index < actualFrameSize; index++)
@@ -291,8 +293,7 @@ namespace CelebWeather
 
         void storeEncodedForecast(const openmeteo_sdk::WeatherApiResponse* forecast)
         {
-            int8_t department = atoi(Config::Department);
-            actualForecastFrameSize = Encoder::EncodeForecast(forecast, department, forecastFrame, maxForecastFrameSize);
+            actualForecastFrameSize = Encoder::EncodeForecast(forecast, Config::Department, forecastFrame, maxForecastFrameSize);
         }
 
         void loopViaMillisRetrieveForecastHourlySendForecastEverySix()
@@ -315,7 +316,7 @@ namespace CelebWeather
                     Serial.println("---- Refresh forced ---");
 
                 // retrieve department if needed
-                if (Config::Department[0] == 0)
+                if (Config::Department == 0)
                     retrieveDepartment();
 
                 // check time every timeCheckPeriodSeconds seconds

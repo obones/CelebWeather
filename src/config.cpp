@@ -22,12 +22,12 @@ namespace CelebWeather
         char OpenMeteoAPIKey[OpenMeteoAPIKeyLength] = "";
 
         // not managed via the portal
-        char Department[DepartmentLength] = "";
+        int8_t Department = 0;
         int RefreshPeriodSeconds = 10 * 60;
 
         void reset()
         {
-            Department[0] = 0;
+            Department = 0;
         }
     }
 }
