@@ -350,6 +350,8 @@ namespace CelebWeather
                     {
                         sendTimeSyncMessage();
                     }
+
+                    previousMillis = millis();
                 }
             }
         }
