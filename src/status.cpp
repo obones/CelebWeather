@@ -302,6 +302,7 @@ namespace CelebWeather
 
             static unsigned long previousMillis = 0;
             static int previousRetrieveForecastHour = -1;
+            static int previousRetrieveTimeOnlyMinute = -1;
 
             if (Connected)
             {
@@ -346,9 +347,11 @@ namespace CelebWeather
                         transmitForecast(forecastFrame, actualForecastFrameSize);
                     }
                     // if not already done just before, send time every 10 minutes at 01, 11, 21, 31...
-                    else if (tm.tm_min % 10 == 1)
+                    else if ((tm.tm_min % 10 == 1) && (tm.tm_min != previousRetrieveTimeOnlyMinute))
                     {
                         sendTimeSyncMessage();
+
+                        previousRetrieveTimeOnlyMinute = tm.tm_min;
                     }
 
                     previousMillis = millis();
