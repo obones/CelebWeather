@@ -433,7 +433,7 @@ namespace CelebWeather
                 quartets[quartetIndex++] = 0xC;
                 quartets[quartetIndex++] = getEncodedProbability(dayProbability);
                 quartets[quartetIndex++] = 0x6;
-                quartets[quartetIndex++] = 0xC;
+                quartets[quartetIndex++] = 0xE;
             }
 
             uint8_t checksum = 7;
