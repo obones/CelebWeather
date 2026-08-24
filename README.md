@@ -17,6 +17,7 @@ Ce projet est un "travail en cours", voici les étapes envisagées, celles barr�
 4. ~~Mettre en forme ces données pour créer un message POCSAG~~
 5. ~~Emettre ce message au bon format~~
 6. ~~Constater que c'est bien lu par la station~~
+7. Activer l'alerte en cas de vigilance jaune ou supérieure
 
 ## Matériel
 
@@ -60,6 +61,16 @@ flatc --cpp  --scoped-enums --gen-all --no-emit-min-max-enum-values -o ../includ
 ```
 
 Assurez-vous d'avoir la même version de flatc.exe que celle utilisée par le projet et indiquée dans `platform.io`
+
+### Département
+
+Le département à afficher sur la station est obtenu à partir des coordonnées GPS via le service [Découpage administratif](https://www.data.gouv.fr/dataservices/api-decoupage-administratif-api-geo)
+
+En cas d'échec, le département 75 est utilisé par défaut, cette valeur n'étant que purement cosmétique.
+
+### Protocole radio
+
+Le protocole employé pour communiquer avec la station météo est décrit dans un [document dédié](doc/protocol.md)
 
 ## Utilisation
 
