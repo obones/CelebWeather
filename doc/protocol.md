@@ -115,9 +115,9 @@ Le résultat est stocké sur un ou deux quartets selon les cas. Sur un quartet, 
 
 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 |--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
-| Quartet | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | |
-| Nombre de bits | | | | | | | | | | | | | 5 | 5 | 7 | 7 | 7 | 4 | 8 | 4 | 4 |
-| Utilisation | Marqueur<br/>0xF | Heure | Minutes: dizaines | Minutes: unités | Mois | Jour | Jour + année | Année | Checksum | 0 | 0 | 0 | Intervalle entre les prévisions | Nombre N de départements | Département 0 | ... | Département N-1 | 0x5 | Checksum | 0x2 | 0xD
+| Quartet | 0 | 1 | 2 | 3 | 4 | | | | 8 | 9 | 10 | 11 | |
+| Nombre de bits | | | | | | 2 | 4 | 6 | | | | | 5 | 5 | 7 | 7 | 7 | 4 | 8 | 4 | 4 |
+| Utilisation | Marqueur<br/>0xF | Heure | Minutes: dizaines | Minutes: unités | Mois | Jour: dizaine | Jour: unités | Année | Checksum | 0 | 0 | 0 | Intervalle entre les prévisions | Nombre N de départements | Département 0 | ... | Département N-1 | 0x5 | Checksum | 0x2 | 0xD
 
 Le codage de la date et l'heure est assez alambiqué :
 
@@ -127,11 +127,11 @@ Le codage de la date et l'heure est assez alambiqué :
     * entre 20 et 23 --> valeur moins 10
 * les minutes sont codées "en BCD" : dizaines sur un quartet, unités sur un quartet. Ne pas oublier que le chiffre "BCD" des dizaines de minutes se voit ajouter 10 pour les heures entre 10 et 19
 * les mois sont codés en binaire sur un quartet
-* les jours sont codés en BCD, avec les dizaines sur 2 bits et les unités sur 4 bits dont 2 sont avec les années.
-* les années sont codée en binaire avec 2 bits issus du quartet précédent.
+* les jours sont codés en BCD, avec les dizaines sur 2 bits et les unités sur 4 bits
+* les années sont codée en binaire sur 6 bits, la valeur 0 étant l'année 2000.
 
 Le codage des départements se fait sous la forme d'une liste de valeurs sur 7 bits précédée du nombre de valeurs sur 5 bits.<br/>
-Le dernier numéro de département est complété à droite par 0 à 3 bits afin d'aligner le résultat sur un quartet. Ainsi, la valeur 0x5 située juste après est parfaitement alignée sur un multiple de 4.
+Le dernier numéro de département est complété à droite par 0 à 3 bits afin d'aligner le résultat sur un quartet. Ainsi, la valeur 0x5 située juste après est parfaitement alignée sur le début d'un quartet.
 
 L'intervalle entre les prévisions est utilisé pour que la station sache à quelle minute écouter aux heures suivantes :
 
