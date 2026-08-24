@@ -205,15 +205,15 @@ namespace CelebWeather
                 case 3:   // overcast
                     return (isDay) ? 0x03 : 0x19;
                 case 45:  // fog
-                    return (isDay) ? 0x03 : 0x19;
+                    return (isDay) ? 0x83 : 0x83;
                 case 48:  // depositing rime fog
-                    return (isDay) ? 0x10 : 0x20;
+                    return (isDay) ? 0x44 : 0x44;
                 case 51:  // Light drizzle
-                    return (isDay) ? 0x07 : 0x1A;
+                    return (isDay) ? 0x47 : 0x5A;
                 case 53:  // Moderate drizzle
-                    return (isDay) ? 0x08 : 0x1B;
+                    return (isDay) ? 0x48 : 0x5B;
                 case 55:  // Dense drizzle
-                    return (isDay) ? 0x09 : 0x1C;
+                    return (isDay) ? 0x49 : 0x5C;
                 case 56:  // Light freezing drizzle
                     return (isDay) ? 0x07 : 0x1A;
                 case 57:  // Dense freezing drizzle
@@ -227,7 +227,7 @@ namespace CelebWeather
                 case 66:  // Light freezing rain
                     return (isDay) ? 0x04 : 0x1A;
                 case 67:  // Heavy freezing rain
-                    return (isDay) ? 0x06 : 0x1C;
+                    return (isDay) ? 0x45 : 0x1C;
                 case 71:  // Slight snow fall
                     return (isDay) ? 0x10 : 0x20;
                 case 73:  // Moderate snow fall
@@ -251,7 +251,7 @@ namespace CelebWeather
                 case 96:  // Slight hail thunderstorm
                     return (isDay) ? 0x0B : 0x1E;
                 case 99:  // Heavy hail thunderstorm
-                    return (isDay) ? 0x0C : 0x1F;
+                    return (isDay) ? 0x4C : 0x4C;
                 case 255:
                     return (isDay) ? 0x17 : 0x23;
                 default:
