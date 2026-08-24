@@ -6,5 +6,11 @@
         "openmeteo",
         "Pocsag"
     ],
-    "cSpell.language": "fr"
+    "cSpell.language": "en",
+    "cSpell.overrides": [
+        {
+            "filename": "**/*.md",
+            "language": "fr"
+        }
+    ]
 }
