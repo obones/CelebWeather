@@ -145,14 +145,14 @@ Dans les observations, cet intervalle vaut toujours 12, dans l'exemple précéde
 
 ### Prévisions météo longues (0x0)
 
-|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
-| Quartet | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
-| Utilisation | Marqueur<br/>0x0 | Département (Poids fort) | Département (Poids faible) | 0x0 | 0x04 | Température basse : dizaines | Température basse : unités | Température haute : dizaines | Température haute : unités | Icône 0 | Icône 1 | Icône 2 | Icône 3 | Icône 4 | Checksum |
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
+| Quartet | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 |
+| Utilisation | Marqueur<br/>0x0 | Département (Poids fort) | Département (Poids faible) | 0x0 | 0x04 | Température basse : dizaines | Température basse : unités | Température haute : dizaines | Température haute : unités | Icône 0 (Poids fort) | Icône 0 (Poids faible) | Icône 1 (Poids fort) | Icône 1 (Poids faible) | Icône 2 (Poids fort) | Icône 2 (Poids faible) | Icône 3 (Poids fort) | Icône 3 (Poids faible) | Icône 4 (Poids fort) | Icône 4 (Poids faible) | Checksum |
 
-Les quartets 5 à 14 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
+Les quartets 5 à 19 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
 
-La somme de contrôle est présente dans chaque répétition et calculée sur les 9 quartets précédents.
+La somme de contrôle est présente dans chaque répétition et calculée sur les 14 quartets précédents.
 
 La température est encodée en BCD et décalée de 40. Ainsi, une température de 12°C est encodée par 0x52
 
