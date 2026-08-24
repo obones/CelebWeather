@@ -46,7 +46,7 @@ Le reste du découpage en batch, les mots de synchronisation et de veille sont c
 
 Chaque caractère présent dans le message correspond à 6 bits selon cette correspondance:
 
-| Valeur | caractère |
+| Valeur | Caractère |
 |---|---|
 | 3 | s |
 | 32 | p |
@@ -55,7 +55,9 @@ Chaque caractère présent dans le message correspond à 6 bits selon cette corr
 | 61 | m |
 | 62 | n |
 | 63 | o |
-| 0-2; 4-31; 33-58 | 32 + valeur |
+| 0-2; 4-31; 33-58 | 32 + valeur <sup>*</sup> |
+
+<sup>* *le résultat de l'opération est le code [ASCII](https://ascii-table.net/) du caractère à utiliser*</sup>
 
 Les valeurs sur 6 bits sont ensuite à répartir par groupe de 4 afin de créer des trames de quartets (nibbles) dans l'ordre des bits lus :
 
