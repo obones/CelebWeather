@@ -9,7 +9,12 @@ L'identification des éléments constituant ce protocole de transmission a été
   - [Niveau présentation](#niveau-présentation)
   - [Niveau application](#niveau-application)
     - [Date/Heure + Départements (0xF)](#dateheure--départements-0xf)
+      - [Date et heure](#date-et-heure)
+      - [Intervalle d'écoute](#intervalle-découte)
+      - [Départements](#départements)
     - [Prévisions météo longues (0x0)](#prévisions-météo-longues-0x0)
+      - [Températures et icônes](#températures-et-icônes)
+      - [Probabilité de pluie](#probabilité-de-pluie)
     - [Prévisions météo courtes (0x4)](#prévisions-météo-courtes-0x4)
     - [Trame inconnue (0xE)](#trame-inconnue-0xe)
 
@@ -113,11 +118,26 @@ Le résultat est stocké sur un ou deux quartets selon les cas. Sur un quartet, 
 
 ### Date/Heure + Départements (0xF)
 
-|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
-| Quartet | 0 | 1 | 2 | 3 | 4 | | | | 8 | 9 | 10 | 11 | |
-| Nombre de bits | | | | | | 2 | 4 | 6 | | | | | 5 | 5 | 7 | 7 | 7 | 4 | 8 | 4 | 4 |
-| Utilisation | Marqueur<br/>0xF | Heure | Minutes: dizaines | Minutes: unités | Mois | Jour: dizaine | Jour: unités | Année | Checksum | 0 | 0 | 0 | Intervalle entre les prévisions | Nombre N de départements | Département 0 | ... | Département N-1 | 0x5 | Checksum | 0x2 | 0xD
+<table border=1 cellpadding=4 cellspacing=0>
+    <tr align="center">
+        <td align="left">Quartet</td>
+        <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td colspan=3>5 - 7</td><td>8</td><td>9</td><td>10</td><td>11</td>
+        <td colspan=6></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>
+    <tr align="center">
+        <td align="left">Nombre de bits</td>
+        <td>4</td><td>4</td><td>4</td><td>4</td><td>4</td><td>2</td><td>4</td><td>6</td><td>4</td><td>4</td><td>4</td><td>4</td>
+        <td>5</td><td>5</td><td>7</td><td>7</td><td>7</td><td>0 à 3</td><td>4</td><td colspan=2>8</td><td>4</td><td>4</td>
+    </tr>
+    <tr align="center">
+        <td align="left">Utilisation</td><td>Marqueur<br/>0xF</td><td>Heure</td><td>Minutes: dizaines</td><td>Minutes: unités</td><td>Mois</td>
+        <td>Jour: dizaine</td><td>Jour: unités</td><td>Année</td><td>Checksum</td><td>0</td><td>0</td><td>0</td>
+        <td>Intervalle entre les prévisions</td><td>Nombre N de départements</td><td>Département 0</td><td> ...</td><td>Département N-1</td>
+        <td>Alignement</td><td> 0x5</td><td colspan=2>Checksum</td><td>0x2</td><td>0xD</td>
+    </tr>
+</table>
+
+#### Date et heure
 
 Le codage de la date et l'heure est assez alambiqué :
 
@@ -130,8 +150,7 @@ Le codage de la date et l'heure est assez alambiqué :
 * les jours sont codés en BCD, avec les dizaines sur 2 bits et les unités sur 4 bits
 * les années sont codée en binaire sur 6 bits, la valeur 0 étant l'année 2000.
 
-Le codage des départements se fait sous la forme d'une liste de valeurs sur 7 bits précédée du nombre de valeurs sur 5 bits.<br/>
-Le dernier numéro de département est complété à droite par 0 à 3 bits afin d'aligner le résultat sur un quartet. Ainsi, la valeur 0x5 située juste après est parfaitement alignée sur le début d'un quartet.
+#### Intervalle d'écoute
 
 L'intervalle entre les prévisions est utilisé pour que la station sache à quelle minute écouter aux heures suivantes :
 
@@ -143,14 +162,37 @@ L'intervalle entre les prévisions est utilisé pour que la station sache à que
 Par exemple, pour le département 2, elle écoutera à 00h + 2 * Intervalle minutes et pendant environ 4 minutes.</br>
 Dans les observations, cet intervalle vaut toujours 12, dans l'exemple précédent la station écoutera donc pendant 4 minutes à 00h24, 06h24, 12h24 et 18h24
 
+#### Départements
+
+Le codage des départements que la station doit proposer se fait sous la forme d'une liste de valeurs sur 7 bits précédée du nombre de départements possibles sur 5 bits.<br/>
+Le dernier numéro de département est complété à droite par 0 à 3 bits afin d'aligner le résultat sur un quartet. Ainsi, la valeur 0x5 située juste après est parfaitement alignée sur le début d'un quartet.
+
+La somme de contrôle est calculée depuis le quartet 12 jusqu'au quartet situé juste avant, celui contenant 0x5.
+
 ### Prévisions météo longues (0x0)
 
-|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
-| Quartet | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 |
-| Utilisation | Marqueur<br/>0x0 | Département (Poids fort) | Département (Poids faible) | 0x0 | 0x04 | Température basse : dizaines | Température basse : unités | Température haute : dizaines | Température haute : unités | Icône 0 (Poids fort) | Icône 0 (Poids faible) | Icône 1 (Poids fort) | Icône 1 (Poids faible) | Icône 2 (Poids fort) | Icône 2 (Poids faible) | Icône 3 (Poids fort) | Icône 3 (Poids faible) | Icône 4 (Poids fort) | Icône 4 (Poids faible) | Checksum |
+#### Températures et icônes
 
-Les quartets 5 à 19 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
+<table border=1 cellpadding=4 cellspacing=0>
+    <tr align="center">
+        <td align="left">Quartet</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
+        <td>5</td>
+        <td>6</td><td>7</td><td>8</td><td>9</td>
+        <td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td>
+        <td>20</td>
+    </tr>
+    <tr align="center">
+        <td align="left">Utilisation</td><td>Marqueur<br/>0x0</td><td colspan=2>Département</td><td>0x0</td><td>0x04</td>
+        <td>Checksum</td>
+        <td colspan=2>Température<br/>basse</td><td colspan=2>Température<br/>haute</td>
+        <td colspan=2>Icône 0</td><td colspan=2>Icône 1</td><td colspan=2>Icône 2</td><td colspan=2>Icône 3</td><td colspan=2>Icône 4</td>
+        <td>Checksum</td>
+    </tr>
+</table>
+
+La première somme de contrôle est calculée sur les 5 premiers quartets
+
+Les quartets 6 à 20 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
 
 La somme de contrôle est présente dans chaque répétition et calculée sur les 14 quartets précédents.
 
@@ -169,28 +211,51 @@ L'utilisation des icônes est la suivante:
 
 Attention : l'icône de nuit d'un groupe de 5 est associée au jour précédent. Ainsi, la station affichera l'icône du troisième groupe pour la période "Nuit" de la journée de demain.
 
-A la suite de ces éléments, on trouve les prévisions de probabilité de pluie selon ce format, répété six fois :
+#### Probabilité de pluie
 
-|  |  |  |  |  |  |
-|--|--|--|--|--|--|
-| Quartet | 0 | 1 | 2 | 3 | 4  |
-| Utilisation | 0x3 | 0xC | Probabilité de pluie pour la journée | 0x6 | 0xE |
+Dans la même trame, à la suite des quartets précédents, on trouve les prévisions de probabilité de pluie selon ce format, répété six fois :
+
+<table border=1 cellpadding=4 cellspacing=0>
+    <tr align="center">
+        <td align="left">Quartet</td><td>96</td><td>97</td><td>98</td><td>99</td><td>100</td>
+    </tr>
+    <tr align="center">
+        <td align="left">Utilisation</td><td>0x3</td><td>0xC</td><td>Probabilité de pluie</br>pour la journée</td><td>0x6</td><td>0xE</td>
+    </tr>
+</table>
+
+Cette partie est conclue par les éléments suivants :
+
+<table border=1 cellpadding=4 cellspacing=0>
+    <tr align="center">
+        <td align="left">Quartet</td><td>126</td><td>127</td><td>128</td><td>129</td>
+    </tr>
+    <tr align="center">
+        <td align="left">Utilisation</td><td colspan=2>Checksum</td><td>0x0</td><td>0xB</td>
+    </tr>
+</table>
+
+La somme de contrôle est calculée sur l'intégralité des 5 * 6 = 30 quartets utilisés pour les prédictions de pluie.
 
 La probabilité de pluie est une correspondance entre une valeur et un niveau donné :
 
-|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
-| Valeur | 0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xA | 0xB | 0xC | 0xD | 0xE |
-| Probabilité | 0 |  5 |  10 |  20 |  25 |  30 |  40 |  50 |  60 |  70 |  75 |  80 |  90 |  95 |  99 |
-
-Enfin, les prévisions de pluie sont suivies des éléments suivants :
-
-|  |  |  |  |  |
-|--|--|--|--|--|
-| Quartet | 0 | 1 | 2 | 3 |
-| Utilisation | Checksum poids fort | Checksum poids faible | 0x0 | 0xB |
-
-La somme de contrôle est calculée sur l'intégralité des 5 * 6 = 30 quartets utilisés pour les prédictions de pluie.
+| Valeur | Niveau |
+| ------ | ------ |
+| 0x0    | 0      |
+| 0x1    | 5      |
+| 0x2    | 10     |
+| 0x3    | 20     |
+| 0x4    | 25     |
+| 0x5    | 30     |
+| 0x6    | 40     |
+| 0x7    | 50     |
+| 0x8    | 60     |
+| 0x9    | 70     |
+| 0xA    | 75     |
+| 0xB    | 80     |
+| 0xC    | 90     |
+| 0xD    | 95     |
+| 0xE    | 98     |
 
 ### Prévisions météo courtes (0x4)
 
