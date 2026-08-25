@@ -19,12 +19,19 @@ Ce projet est un "travail en cours", voici les étapes envisagées, celles barr�
 6. ~~Constater que c'est bien lu par la station~~
 7. Activer l'alerte en cas de vigilance jaune ou supérieure
 
+>[!WARNING]
+> Ce module va émettre sur la fréquence 466.206250 MHz qui n'est pas libre de droits.
+>
+> Si vous utilisez la mauvaise antenne et/ou le mauvais module radio, vous pourriez émettre bien trop fort et à trop grande distance et perturber
+> l'utilisation légitime de cette fréquence.<br/>
+> Vous êtes seul responsable des conséquences associées.
+
 ## Matériel
 
 Ce projet cible un montage à base d'ESP32 communiquant avec un module RFM69 tout prêt et a été testé avec cette combinaison:
 
-ESP32-WROOM32D
-RFM69C calé sur 433MHz
+* Module de développement contenant un ESP32-WROOM32D
+* Module RFM69C réglé en usine sur 433MHz. Attention, ne pas utiliser un module dont le nom contient un H, c'est la version "Haute puissance" qui émet bien trop fort.
 
 Les connexions sont les suivantes:
 
@@ -42,6 +49,8 @@ Les connexions sont les suivantes:
 |  32   |       |       |       | Long leg (-) |              |
 
 La deuxième broche résistance pour la LED AP Status est connectée à la patte courte (+) de la LED AP status
+
+Enfin, la broche ANT du module RFM69 est à relier à un fil rigide de 8.5cm afin d'assurer une transmission à courte distance.
 
 ## Développement
 
