@@ -46,9 +46,9 @@ Les connexions sont les suivantes:
 |  19   | MISO  |       |       |              |              |
 |  21   |       | Leg 2 |       |              |              |
 |  23   | MOSI  |       |       |              |              |
-|  32   |       |       |       | Long leg (-) |              |
+|  32   |       |       |       | Short leg (-)|              |
 
-La deuxième broche résistance pour la LED AP Status est connectée à la patte courte (+) de la LED AP status
+La deuxième broche résistance pour la LED AP Status est connectée à la patte longue (+) de la LED AP status
 
 Enfin, la broche ANT du module RFM69 est à relier à un fil rigide de 8.5cm afin d'assurer une transmission à courte distance.
 
