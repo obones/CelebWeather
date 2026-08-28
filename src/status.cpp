@@ -303,7 +303,7 @@ namespace CelebWeather
 
             static unsigned long previousMillis = 0;
             static int previousRetrieveForecastHour = -1;
-            static int previousRetrieveTimeOnlyMinute = -1;
+            static int previousTransmitMinute = -1;
 
             if (Connected)
             {
@@ -337,22 +337,26 @@ namespace CelebWeather
                         retrieveForecast(storeEncodedForecast);
                     }
 
-                    // send time and predictions every 6 hours, one minute past the hour
-                    // or immediately in case of forced refresh
-                    if (((tm.tm_hour % 6 == 0) && (tm.tm_min == 1)) || localForceRefresh)
+                    // avoid sending again if we are still in the same minute
+                    if ((tm.tm_min != previousTransmitMinute) || localForceRefresh)
                     {
-                        transmitForecast(forecastFrame, actualForecastFrameSize);
+                        // send time and predictions every 6 hours, one minute past the hour
+                        // or immediately in case of forced refresh
+                        if (((tm.tm_hour % 6 == 0) && (tm.tm_min == 1)) || localForceRefresh)
+                        {
+                            transmitForecast(forecastFrame, actualForecastFrameSize);
 
-                        sendTimeSyncMessage();
+                            sendTimeSyncMessage();
 
-                        transmitForecast(forecastFrame, actualForecastFrameSize);
-                    }
-                    // if not already done just before, send time every 10 minutes at 01, 11, 21, 31...
-                    else if ((tm.tm_min % 10 == 1) && (tm.tm_min != previousRetrieveTimeOnlyMinute))
-                    {
-                        sendTimeSyncMessage();
+                            transmitForecast(forecastFrame, actualForecastFrameSize);
+                        }
+                        // if not already done just before, send time every 10 minutes at 01, 11, 21, 31...
+                        else if (tm.tm_min % 10 == 1)
+                        {
+                            sendTimeSyncMessage();
+                        }
 
-                        previousRetrieveTimeOnlyMinute = tm.tm_min;
+                        previousTransmitMinute = tm.tm_min;
                     }
 
                     previousMillis = millis();
