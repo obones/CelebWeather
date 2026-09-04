@@ -184,7 +184,7 @@ La somme de contrôle est calculée depuis le quartet 12 jusqu'au quartet situé
         <td>20</td>
     </tr>
     <tr align="center">
-        <td align="left">Utilisation</td><td>Marqueur<br/>0x0</td><td colspan=2>Département</td><td>0x0</td><td>0x04</td>
+        <td align="left">Utilisation</td><td>Marqueur<br/>0x0</td><td colspan=2>Département</td><td>Alerte<br/>0x0</td><td>0x04</td>
         <td>Checksum</td>
         <td colspan=2>Température<br/>basse</td><td colspan=2>Température<br/>haute</td>
         <td colspan=2>Icône 0</td><td colspan=2>Icône 1</td><td colspan=2>Icône 2</td><td colspan=2>Icône 3</td><td colspan=2>Icône 4</td>
@@ -193,6 +193,9 @@ La somme de contrôle est calculée depuis le quartet 12 jusqu'au quartet situé
 </table>
 
 La première somme de contrôle est calculée sur les 5 premiers quartets
+
+Les deux bits de poids fort du quartet 3 contiennent l'indicateur d'alerte provoquant l'affichage ATTENTION, AVIS DE TEMPETE. Les valeurs 0x8, 0x4 et 0xC déclenchent toutes l'apparition de l'alerte<br/>
+Les deux bits de poids faible du quartet 3 doivent être nuls, sinon la trame est ignorée.
 
 Les quartets 6 à 20 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
 
@@ -261,9 +264,9 @@ La probabilité de pluie est une correspondance entre une valeur et un niveau do
 
 ### Prévisions météo courtes (0x4)
 
-Cette trame n'est prévue pour encoder que 3 jours de prévisions et n'a été observée que pour le département 75, elle n'est donc pas utilisée par ce module.
+Cette trame n'est prévue pour encoder que 4 jours de prévisions et n'a été observée que pour le département 75, elle n'est donc pas utilisée par ce module.
 
-Son format est identique aux prévisions météo longues (0x0) en limitant les pictogrammes à 3 listes et en excluant la partie probabilité de pluie
+Son format est identique aux prévisions météo longues (0x0) en limitant les pictogrammes à 4 listes et en excluant la partie probabilité de pluie
 
 ### Trame inconnue (0xE)
 
