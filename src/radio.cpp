@@ -104,6 +104,10 @@ namespace CelebWeather
 
                 previousReconfigureMillis = millis();
             }
+            else
+            {
+                Serial.println("reconfigureIfNeeded: not needed");
+            }
         }
 
         void setup()

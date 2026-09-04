@@ -312,9 +312,9 @@ namespace CelebWeather
                 init_batch((poc_batch *)&batches[i]);
             }
 
-            Serial.println("Generating batches");
+            //Serial.println("Generating batches");
             int batchesCount = set_alphanum_frame(batches, MAXBATCHCNT-1, ric, func&3, frame, frameSize);
-            Serial.print("Generated "); Serial.print(batchesCount); Serial.println(" batches");
+            //Serial.print("Generated "); Serial.print(batchesCount); Serial.println(" batches");
 
             if( batchesCount < 0 )
             {
@@ -324,7 +324,7 @@ namespace CelebWeather
                 return 0;
             }
 
-            for(int batchIndex = 0; batchIndex < batchesCount; batchIndex++)
+            /*for(int batchIndex = 0; batchIndex < batchesCount; batchIndex++)
             {
                 auto batch = batches[batchIndex];
 
@@ -334,27 +334,27 @@ namespace CelebWeather
                 for (int wordIndex = 0; wordIndex < sizeof(batch.words) / sizeof(batch.words[0]); wordIndex++)
                     Serial.printf("%08x ", batch.words[wordIndex]);
                 Serial.println();
-            }
+            }*/
 
-            Serial.println("Reading bytes out of batches");
+            //Serial.println("Reading bytes out of batches");
             int bytesCount = 0;
             while( !pocctx.frm_end )
             {
                 unsigned char tmp = pocsag_nextbyte(&pocctx, batches, batchesCount);
                 if (!pocctx.frm_end)
                 {
-                    Serial.printf("%02x ", tmp);
+                    //Serial.printf("%02x ", tmp);
                     bytes[bytesCount++] = ~tmp;
                 }
 
                 if (bytesCount > maxBytes)
                 {
-                    Serial.printf("\n/!\\ Too many bytes to write ! (%d > %d)\n", bytesCount, maxBytes);
+                    Serial.printf("/!\\ Too many bytes to write ! (%d > %d)\n", bytesCount, maxBytes);
                     delete[] batches;
                     return 0;
                 }
             }
-            Serial.println();
+            //Serial.println();
             delete[] batches;
 
             return bytesCount;
