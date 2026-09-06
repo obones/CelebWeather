@@ -184,7 +184,7 @@ La somme de contrôle est calculée depuis le quartet 12 jusqu'au quartet situé
         <td>20</td>
     </tr>
     <tr align="center">
-        <td align="left">Utilisation</td><td>Marqueur<br/>0x0</td><td colspan=2>Département</td><td>Alerte<br/>0x0</td><td>0x04</td>
+        <td align="left">Utilisation</td><td>Marqueur<br/>0x0</td><td colspan=2>Département</td><td>Alerte<br/>0x0</td><td>0x4</td>
         <td>Checksum</td>
         <td colspan=2>Température<br/>basse</td><td colspan=2>Température<br/>haute</td>
         <td colspan=2>Icône 0</td><td colspan=2>Icône 1</td><td colspan=2>Icône 2</td><td colspan=2>Icône 3</td><td colspan=2>Icône 4</td>
@@ -194,7 +194,7 @@ La somme de contrôle est calculée depuis le quartet 12 jusqu'au quartet situé
 
 La première somme de contrôle est calculée sur les 5 premiers quartets
 
-Les deux bits de poids fort du quartet 3 contiennent l'indicateur d'alerte provoquant l'affichage ATTENTION, AVIS DE TEMPETE. Les valeurs 0x8, 0x4 et 0xC déclenchent toutes l'apparition de l'alerte<br/>
+Les deux bits de poids fort du quartet 3 contiennent l'indicateur d'alerte provoquant l'affichage ATTENTION, AVIS DE TEMPETE. Les valeurs 0x4, 0x8 et 0xC déclenchent toutes l'apparition de l'alerte<br/>
 Les deux bits de poids faible du quartet 3 doivent être nuls, sinon la trame est ignorée.
 
 Les quartets 6 à 20 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
@@ -274,16 +274,35 @@ Les messages reçus sont par exemple ceux-ci
 
 ```
 ZK<*H2H:HBHJHRI"I*I2I:IZH'
+ZK<*H4,<,D,JHRI$-,-2I<-l/D
 ZG<2H:HBHRI*I2I:JN
-ZG<2H:HBHRI*I2!?%'?BWHC+da?rp
+ZL<$,,,4,<,BHL,T-$-,-4-<-l/=
+Zp<F
 ```
 
 décodés en quartets ainsi:
 
 ```
 E A B 7 0 A A 1 2 A 1 A A 2 2 A 2 A A 3 2 A 4 2 A 4 A A 5 2 A 5 A A 7 A A 0 7 B
+E A B 7 0 A A 1 4 3 1 C 3 2 4 3 2 A A 3 2 A 4 4 3 4 C 3 5 2 A 5 C 3 7 C 3 E 4 B
 E A 7 7 1 2 A 1 A A 2 2 A 3 2 A 4 A A 5 2 A 5 A A A E B
-E A 7 7 1 2 A 1 A A 2 2 A 3 2 A 4 A A 5 2 0 5 F 1 4 7 7 E 2 D E 8 8 C B 1 0 1 7 D 2 8 2 D
+E A C 7 0 4 3 0 C 3 1 4 3 1 C 3 2 2 A 2 C 3 3 4 3 4 4 3 4 C 3 5 4 3 5 C 3 7 C 3 D D B
+E A 0 7 2 6 B
 ```
 
-Aucun impact sur la station n'a été remarqué, ce projet ne l'utilise donc pas
+Aucun impact sur la station n'a été remarqué, ce projet ne l'utilise donc pas, mais on notera cette structure:
+
+<table border=1 cellpadding=4 cellspacing=0>
+    <tr align="center">
+        <td align="left">Quartet</td><td>0</td><td>1</td><td>2</td><td>3</td>
+        <td>3i + 4</td><td>3i + 5</td><td>3i + 6</td>
+        <td>3N + 7</td><td>3N + 8</td>
+        <td>3N + 9</td>
+    </tr>
+    <tr align="center">
+        <td align="left">Utilisation</td><td>Marqueur<br/>0xE</td><td>0xA</td><td>Nombre d'éléments<br/>N</td><td>0x7</td>
+        <td colspan=3>Élément répété<br/>i &#x2208; [0..N[</td>
+        <td colspan=2>Checksum</td>
+        <td>0xB</td>
+    </tr>
+</table>
