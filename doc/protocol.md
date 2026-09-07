@@ -16,7 +16,7 @@ L'identification des éléments constituant ce protocole de transmission a été
       - [Températures et icônes](#températures-et-icônes)
       - [Probabilité de pluie](#probabilité-de-pluie)
     - [Prévisions météo courtes (0x4)](#prévisions-météo-courtes-0x4)
-    - [Trame inconnue (0xE)](#trame-inconnue-0xe)
+    - [Vigilance détaillée (0xE)](#vigilance-détaillée-0xe)
 
 ## Généralités
 
@@ -268,41 +268,274 @@ Cette trame n'est prévue pour encoder que 4 jours de prévisions et n'a été o
 
 Son format est identique aux prévisions météo longues (0x0) en limitant les pictogrammes à 4 listes et en excluant la partie probabilité de pluie
 
-### Trame inconnue (0xE)
+### Vigilance détaillée (0xE)
 
-Les messages reçus sont par exemple ceux-ci
+Ce type de trame n'est compris que par les stations munies de voyants orange et rouge pour indiquer un niveau de vigilance météorologique associé à un texte détaillant les conditions à venir.
 
-```
-ZK<*H2H:HBHJHRI"I*I2I:IZH'
-ZK<*H4,<,D,JHRI$-,-2I<-l/D
-ZG<2H:HBHRI*I2I:JN
-ZL<$,,,4,<,BHL,T-$-,-4-<-l/=
-Zp<F
-```
-
-décodés en quartets ainsi:
-
-```
-E A B 7 0 A A 1 2 A 1 A A 2 2 A 2 A A 3 2 A 4 2 A 4 A A 5 2 A 5 A A 7 A A 0 7 B
-E A B 7 0 A A 1 4 3 1 C 3 2 4 3 2 A A 3 2 A 4 4 3 4 C 3 5 2 A 5 C 3 7 C 3 E 4 B
-E A 7 7 1 2 A 1 A A 2 2 A 3 2 A 4 A A 5 2 A 5 A A A E B
-E A C 7 0 4 3 0 C 3 1 4 3 1 C 3 2 2 A 2 C 3 3 4 3 4 4 3 4 C 3 5 4 3 5 C 3 7 C 3 D D B
-E A 0 7 2 6 B
-```
-
-Aucun impact sur la station n'a été remarqué, ce projet ne l'utilise donc pas, mais on notera cette structure:
+La structure est la suivante :
 
 <table border=1 cellpadding=4 cellspacing=0>
     <tr align="center">
         <td align="left">Quartet</td><td>0</td><td>1</td><td>2</td><td>3</td>
-        <td>3i + 4</td><td>3i + 5</td><td>3i + 6</td>
+        <td>3i + 4 <sup>*</sup></td><td></td><td style="border-left-style: hidden; border-right-style: hidden;">3i + 5</td><td></td><td>3i + 6</td>
         <td>3N + 7</td><td>3N + 8</td>
         <td>3N + 9</td>
     </tr>
     <tr align="center">
+        <td align="left">Bits</td><td>4</td><td>4</td><td>4</td><td>4</td>
+        <td colspan=2>5</td><td>2</td><td colspan=2>5</td>
+        <td>4</td><td>4</td><td>4</td>
+    </tr>
+    <tr align="center">
         <td align="left">Utilisation</td><td>Marqueur<br/>0xE</td><td>0xA</td><td>Nombre d'éléments<br/>N</td><td>0x7</td>
-        <td colspan=3>Élément répété<br/>i &#x2208; [0..N[</td>
+        <td colspan=2>Inconnu</td><td>Niveau</td><td colspan=2>Détail</td>
         <td colspan=2>Checksum</td>
         <td>0xB</td>
     </tr>
 </table>
+<sup>* i &#x2208; [0..N[</sup>
+
+Le niveau prend 4 valeurs possibles :
+
+| Valeur | Niveau |
+|--------|--------|
+|   0    | Vert <sup>*</sup>   |
+|   1    | Jaune  |
+|   2    | Orange |
+|   3    | Rouge  |
+
+<sup>* Non envoyé en pratique, la station n'affiche rien dans ce cas là.</sup>
+
+Aucun message n'est associé au niveau jaune, les messages possibles pour les niveaux oranges et rouges sont les suivants :
+
+<table>
+    <tr>
+        <td>Code</td>
+        <td>Niveau</td>
+        <td>Message</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x00</td>
+        <td>Orange</td>
+        <td rowspan=2><sup>*</sup></td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x01</td>
+        <td>Orange</td>
+        <td>ATTENTION AUX VENTS FORTS</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>VENTS TRES VIOLENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x02</td>
+        <td>Orange</td>
+        <td>PLUIES ET RISQUES D’INONDATION</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>FORTES PLUIES ET CRUES PROBABLES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x03</td>
+        <td>Orange</td>
+        <td>ORAGES FORTS</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ORAGES TRES VIOLENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x04</td>
+        <td>Orange</td>
+        <td>NEIGE ET VERGLAS = SOYEZ PRUDENTS SUR LES ROUTES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>CHUTE DE NEIGE ET VERGLAS = EVITEZ LES DEPLACEMENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x05</td>
+        <td>Orange</td>
+        <td>ATTENTION, SITUATION DE CANICULE</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION FORTE CANICULE</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x06</td>
+        <td>Orange</td>
+        <td>ZONE DE GRAND FROID ANNONCEE</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>TRES GRAND FROID – EVITEZ LES SORTIES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x07</td>
+        <td>Orange</td>
+        <td>AVALANCHES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>RISQUE TRES FORT D’AVALANCHES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x08</td>
+        <td>Orange</td>
+        <td rowspan=2><sup>*</sup></td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x09</td>
+        <td>Orange</td>
+        <td>SITUATION DE CANICULE AVEC ORAGES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION FORTE CANICULE - ORAGES VIOLENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x0A</td>
+        <td>Orange</td>
+        <td>SITUATION DE CANICULE – VENTS FORTS A PREVOIR</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION FORTE CANICULE – VENTS VIOLENTS ANNONCES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x0B</td>
+        <td>Orange</td>
+        <td>SITUATION DE CANICULE – PLUIE ET INONDATIONS POSSIBLES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION FORTE CANICULE – PLUIE ET INONDATIONS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x0C</td>
+        <td>Orange</td>
+        <td>GRAND FROID – VENTS FORTS A PREVOIR</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION GRAND FROID – VENTS VIOLENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x0D</td>
+        <td>Orange</td>
+        <td>GRAND FROID – AVEC PLUIE ET INONDATIONS PROBABLES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION GRAND FROID – PLUIE ET INONDATIONS PROBABLES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x0E</td>
+        <td>Orange</td>
+        <td>GRAND FROID – NEIGE ET VERGLAS – LIMITEZ VOS DEPLACEMENTS</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION GRAND FROID – NEIGE ET VERGLAS ABONDANTS – EVITEZ LES DEPLACEMENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x0F</td>
+        <td>Orange</td>
+        <td>GRAND FROID – AVALANCHES PROBABLES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION GRAND FROID – AVALANCHES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x10</td>
+        <td>Orange</td>
+        <td>GRAND FROID – ORAGES VIOLENTS - LIMITEZ VOS SORTIES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION GRAND FROID – ORAGES TRES VIOLENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x11</td>
+        <td>Orange</td>
+        <td>AVALANCHES – VENTS FORTS A PREVOIR</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>AVALANCHES ET VENTS TRES FORTS - DANGER</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x12</td>
+        <td>Orange</td>
+        <td>AVALANCHES – AVEC PLUIE ET INONDATIONS</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>AVALANCHES – PLUIE ET INONDATIONS - DANGER</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x13</td>
+        <td>Orange</td>
+        <td>AVALANCHES - NEIGE ET VERGLAS – LIMITEZ VOS DEPLACEMENTS</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>AVALANCHES - NEIGE ET VERGLAS – EVITEZ LES DEPLACEMENTS</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x14</td>
+        <td>Orange</td>
+        <td>AVALANCHES – ORAGES VIOLENTS - LIMITEZ VOS SORTIES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>AVALANCHES – ORAGES VIOLENTS – NE SORTEZ QU’EN CAS DE NECESSITE</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x15</td>
+        <td>Orange</td>
+        <td>GRAND FROID – VENTS FORTS A PREVOIR ET AVALANCHES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION, GRAND FROID – VENTS FORTS A PREVOIR ET AVALANCHES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x16</td>
+        <td>Orange</td>
+        <td>GRAND FROID, NEIGE ET VERGLAS AVEC DES AVALANCHES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION, GRAND FROID, NEIGE ET VERGLAS AVEC DES AVALANCHES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x17</td>
+        <td>Orange</td>
+        <td>GRAND FROID, AVEC ORAGES FORTS ET AVALANCHES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION, GRAND FROID, AVEC ORAGES FORTS ET AVALANCHES</td>
+    </tr>
+    <tr>
+        <td rowspan=2>0x18</td>
+        <td>Orange</td>
+        <td>GRAND FROID, PLUIE INONDATIONS ET AVALANCHES</td>
+    </tr>
+    <tr>
+        <td>Rouge</td>
+        <td>ATTENTION, GRAND FROID, PLUIE INONDATIONS ET AVALANCHES</td>
+    </tr>
+</table>
+<sup>* Aucun message affiché pour cette valeur</sup>
