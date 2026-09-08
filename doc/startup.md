@@ -35,15 +35,18 @@ Une fois le module correctement connecté, vous pouvez y associer votre station 
 1. Enlever les piles de la station ET du capteur extérieur
 2. Mettre les piles dans le capteur extérieur
 3. Mettre les piles dans la station, moins de 5 minutes après le capteur
-4. Attendre que la station affiche la température du capteur extérieur
-5. Le symbole de réception clignote alors en mode "Point seul".
-6. Attendre 10 clignotements du symbole de réception
-7. Appuyer sur le bouton "Force refresh" du module
-8. Attendre que la date et l'heure s'affichent en même temps que le département clignote
-9. Attendre que les prévisions soient affichées
-10. Appuyer le bouton `Set` longtemps pour passer la station en mode *configuration*
-11. Il est normal qu'un seul département soit disponible, inutile d'utiliser `+`
-12. Appuyer le bouton `Set` plusieurs fois pour configurer les autres éléments (contraste, alerte sonore en cas de vigilance...) jusqu'à revenir à l'affichage des prévisions
+4. Appui long sur Set puis Raz à oui <sup>1</sup>
+5. Attendre que la station affiche la température du capteur extérieur
+6. Le symbole de réception clignote alors en mode "Point seul".
+7. Attendre 10 clignotements du symbole de réception
+8. Appuyer sur le bouton "Force refresh" du module
+9. Attendre que la date et l'heure s'affichent en même temps que le département clignote
+10. Attendre que les prévisions soient affichées
+11. Appuyer le bouton `Set` longtemps pour passer la station en mode *configuration*
+12. Il est normal qu'un seul département soit disponible, inutile d'utiliser `+`
+13. Appuyer le bouton `Set` plusieurs fois pour configurer les autres éléments (contraste, alerte sonore en cas de vigilance...) jusqu'à revenir à l'affichage des prévisions
+
+<sup>1. Uniquement pour les stations le proposant</sup><br/>
 
 Une fois tout ceci fait, la station passe en mode veille et ne met à jour que la température extérieure toutes les 4 secondes.
 
