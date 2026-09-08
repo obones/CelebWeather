@@ -23,6 +23,7 @@ Sur la page de configuration, vous devez remplir les éléments suivants en lais
 |WiFi password| Le mot de passe pour se connecter à votre réseau WiFi |
 |Latitude| La latitude du lieu pour lequel vous voulez les prévisions en utilisant le point comme séparateur décimal. Normalement autour de 45 |
 |Longitude| La longitude du lieu pour lequel vous voulez les prévisions en utilisant le point comme séparateur décimal. Positif pour l'est, Négatif pour l'ouest |
+|Weather alert key| La clé d'API fournie par MeteoFrance que vous aurez obtenue via le bouton "Souscrire à l'API gratuitement" sur cette page: https://portail-api.meteofrance.fr/web/fr/api/DonneesPubliquesVigilance<br/>En cas d'absence de valeur, vous n'obtiendrez pas les alertes de vigilance. |
 
 Cliquez sur *Apply* et déconnectez votre appareil du point d'accès.
 

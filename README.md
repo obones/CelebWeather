@@ -89,7 +89,9 @@ Accédez à la page de configuration sur http://192.168.1.41/config
 
 Il faut alors modifier le mot de passe du portail (AP password) puis donner les éléments pour se connecter à votre réseau WiFi
 
-Par ailleurs, à la section "General parameters", renseignez la latitude et la longitude pour laquelle vous voulez les prévisions. Attention, il faut utiliser le point comme séparateur décimal
+Par ailleurs, à la section "General parameters", renseignez la latitude et la longitude pour laquelle vous voulez les prévisions. Attention, il faut utiliser le point comme séparateur décimal.<br/>
+La valeur "Weather alert key" est la clé d'API fournie par MeteoFrance que vous aurez obtenue via le bouton "Souscrire à l'API gratuitement" sur cette page: https://portail-api.meteofrance.fr/web/fr/api/DonneesPubliquesVigilance<br/>
+En cas d'absence de valeur, vous n'obtiendrez pas les alertes de vigilance.
 
 La section "Open-Meteo parameters" contient des valeurs par défaut qui suffisent pour 99% des utilisateurs, ne la modifiez que si vous savez ce que vous faites.
 
