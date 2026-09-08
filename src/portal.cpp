@@ -41,6 +41,7 @@ namespace CelebWeather
         auto latitude = iotwebconf::TextParameter("Latitude", "latitude", Config::Latitude, (sizeof(Config::Latitude) - 1) * sizeof(Config::Latitude[0]), Config::Latitude);
         auto longitude = iotwebconf::TextParameter("Longitude", "longitude", Config::Longitude, (sizeof(Config::Longitude) - 1) * sizeof(Config::Longitude[0]), Config::Longitude);
         auto timezone = iotwebconf::TextParameter("Time zone", "timezone", Config::Timezone, (sizeof(Config::Timezone) - 1) * sizeof(Config::Timezone[0]), Config::Timezone);
+        auto weatherAlertKey = iotwebconf::TextParameter("Weather alert key", "wak", Config::WeatherAlertKey, (sizeof(Config::WeatherAlertKey) - 1) * sizeof(Config::WeatherAlertKey[0]), Config::WeatherAlertKey);
 
         auto openMeteoGroup = iotwebconf::ParameterGroup("openMeteo", "Open-Meteo parameters");
         auto openMeteoBaseURI = iotwebconf::TextParameter("Base URI", "openMeteoBaseURI", Config::OpenMeteoBaseURI, (sizeof(Config::OpenMeteoBaseURI) - 1) * sizeof(Config::OpenMeteoBaseURI[0]), Config::OpenMeteoBaseURI);
@@ -56,6 +57,7 @@ namespace CelebWeather
             generalParametersGroup.addItem(&latitude);
             generalParametersGroup.addItem(&longitude);
             generalParametersGroup.addItem(&timezone);
+            generalParametersGroup.addItem(&weatherAlertKey);
             iotWebConf.addParameterGroup(&generalParametersGroup);
 
             openMeteoGroup.addItem(&openMeteoBaseURI);

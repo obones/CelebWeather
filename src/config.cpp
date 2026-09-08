@@ -17,6 +17,7 @@ namespace CelebWeather
         char Latitude[LatitudeLength] = "";
         char Longitude[LongitudeLength] = "";
         char Timezone[TimezoneLength] = "Europe/Paris";
+        char WeatherAlertKey[WeatherAlertKeyLength] = "";
 
         char OpenMeteoBaseURI[OpenMeteoBaseURILength] = "https://api.open-meteo.com/v1/";
         char OpenMeteoAPIKey[OpenMeteoAPIKeyLength] = "";
