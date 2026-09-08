@@ -463,7 +463,7 @@ namespace CelebWeather
                 genfrm->quartetFrame[0] = 0x0;
                 genfrm->quartetFrame[1] = (department>>4) & 0xF;
                 genfrm->quartetFrame[2] = (department   ) & 0xF;
-                genfrm->quartetFrame[3] = 0x0;
+                genfrm->quartetFrame[3] = 0x0;  // bit 2 and 3 trigger "Alerte tempête"
                 genfrm->quartetFrame[4] = 0x4;
 
                 genfrm->quartetFrame[5] = 0x7;
@@ -533,6 +533,73 @@ namespace CelebWeather
                 return 0;
 
             genfrm->quartets_cnt = gen_current_time(genfrm->quartetFrame, department);
+
+            int i = 0;
+
+            memset(genfrm->decodeFrame, 0, sizeof(genfrm->decodeFrame));
+            while( i < genfrm->quartets_cnt )
+            {
+                set_quartet(genfrm->decodeFrame, i, genfrm->quartetFrame[i]);
+                i++;
+            }
+
+            int size = (genfrm->quartets_cnt*4)/6;
+            i = 0;
+            while( i < size )
+            {
+                genfrm->frame[i] = raw2char(genfrm->decodeFrame[i]);
+                destFrame[destFrameIndex] = genfrm->frame[i];
+                // printf("%c",genfrm->frm[i]);
+                i++;
+                destFrameIndex++;
+            }
+
+            free(genfrm);
+
+            return destFrameIndex;
+        }
+
+        int EncodeWeatherAlert(uint8_t level, uint8_t details, unsigned char* destFrame, size_t destFrameSize)
+        {
+            int destFrameIndex = 0;
+
+            frame* genfrm = reinterpret_cast<frame*>(calloc(sizeof(frame)*1, 1));
+            if(!genfrm)
+                return 0;
+
+            int quartetIndex = 0;
+            unsigned char * quartets = genfrm->quartetFrame;
+
+            const int tripletCount = (level > 0) ? 1 : 0;  // only store level and details in frame if useful
+            quartets[quartetIndex++] = 0xE;
+            quartets[quartetIndex++] = 0xA;
+            quartets[quartetIndex++] = tripletCount;
+            quartets[quartetIndex++] = 0x7;
+
+            if (level == 1)
+                details = 1;
+
+            for (int tripletIndex = 0; tripletIndex < tripletCount; tripletIndex++)
+            {
+                quartets[quartetIndex++] = 0x0;
+                quartets[quartetIndex++] = 0x0 | ((level & 0x3) << 1) | ((details & 0x10) >> 4);
+                quartets[quartetIndex++] = details & 0x0F;
+            }
+
+            // checksum
+            uint8_t checksum = 7;
+            for (int checksumIndex = 0; checksumIndex < quartetIndex; checksumIndex++)
+            {
+                checksum += quartets[checksumIndex];
+            }
+
+            quartets[quartetIndex++] = (checksum >> 4)  & 0x0F;
+            quartets[quartetIndex++] = checksum & 0x0F;
+
+            // trailer
+            quartets[quartetIndex++] = 0xB;
+
+            genfrm->quartets_cnt = quartetIndex;
 
             int i = 0;
 

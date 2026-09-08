@@ -15,5 +15,7 @@ namespace CelebWeather
         int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, int8_t department, unsigned char* destFrame, size_t destFrameSize);
 
         int EncodeTime(int8_t department, unsigned char* destFrame, size_t destFrameSize);
+
+        int EncodeWeatherAlert(uint8_t level, uint8_t details, unsigned char* destFrame, size_t destFrameSize);
     }
 }
