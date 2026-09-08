@@ -8,16 +8,18 @@ Le principe est le suivant:
 Open-Meteo ---> ESP32 ---> RFM69 ---> Station
 ```
 
-Ce projet est un "travail en cours", voici les étapes envisagées, celles barrées sont déjà faites:
+Ce projet est un "travail en cours", voici les étapes nécessaires à sa réussite :
 
-
-1. ~~Créer un projet de base ESP32 Arduino~~
-2. ~~Permettre une configuration du module en mode "Point d'accès temporaire"~~
-3. ~~Lire les données Open-Meteo toutes les 60 minutes~~
-4. ~~Mettre en forme ces données pour créer un message POCSAG~~
-5. ~~Emettre ce message au bon format~~
-6. ~~Constater que c'est bien lu par la station~~
-7. Activer l'alerte en cas de vigilance jaune ou supérieure
+- [x] Créer un projet de base ESP32 Arduino
+- [x] Permettre une configuration du module en mode "Point d'accès temporaire"
+- [x] Lire les données Open-Meteo toutes les 60 minutes
+- [x] Mettre en forme ces données pour créer un message POCSAG
+- [x] Emettre ce message au bon format
+- [x] Constater que c'est bien lu par la station
+- [x] Activer l'alerte en cas de vigilance jaune ou supérieure
+- [ ] Constater qu'au moins un autre humain a réussi à le compiler et l'utiliser
+<br/>
+<br/>
 
 >[!WARNING]
 > Ce module va émettre sur la fréquence 466.206250 MHz qui n'est pas libre de droits.
