@@ -195,7 +195,8 @@ La somme de contrôle est calculée depuis le quartet 12 jusqu'au quartet situé
 La première somme de contrôle est calculée sur les 5 premiers quartets
 
 Les deux bits de poids fort du quartet 3 contiennent l'indicateur d'alerte provoquant l'affichage ATTENTION, AVIS DE TEMPETE. Les valeurs 0x4, 0x8 et 0xC déclenchent toutes l'apparition de l'alerte<br/>
-Les deux bits de poids faible du quartet 3 doivent être nuls, sinon la trame est ignorée.
+Les deux bits de poids faible du quartet 3 doivent être nuls, sinon la trame est ignorée.<br/>
+L'émission de l'alerte "AVIS DE TEMPETE" ne sera effectuée que par les stations ne supportant pas l'affichage des niveaux de vigilance Jaune, Orange et Rouge.
 
 Les quartets 6 à 20 sont répétés pour autant de jours de prévisions que nécessaire, soit 6  fois : jour en cours + 5 jours suivants.
 
@@ -270,7 +271,8 @@ Son format est identique aux prévisions météo longues (0x0) en limitant les p
 
 ### Vigilance détaillée (0xE)
 
-Ce type de trame n'est compris que par les stations munies de voyants orange et rouge pour indiquer un niveau de vigilance météorologique associé à un texte détaillant les conditions à venir.
+Ce type de trame n'est compris que par les stations munies de voyants orange et rouge pour indiquer un niveau de vigilance météorologique associé à un texte détaillant les conditions à venir.<br/>
+La prise en considération de cette trame par une station la supportant est systématique, elle ne dépend pas des bits "Alerte" présents dans la trame de prévision (0x0).
 
 La structure est la suivante :
 
