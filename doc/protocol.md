@@ -17,6 +17,7 @@ L'identification des éléments constituant ce protocole de transmission a été
       - [Probabilité de pluie](#probabilité-de-pluie)
     - [Prévisions météo courtes (0x4)](#prévisions-météo-courtes-0x4)
     - [Vigilance détaillée (0xE)](#vigilance-détaillée-0xe)
+  - [Temporalité](#temporalité)
 
 ## Généralités
 
@@ -110,8 +111,6 @@ Les valeurs sur 6 bits sont ensuite à répartir par groupe de 4 afin de créer 
 ## Niveau application
 
 Plusieurs types de trames ont été identifiés, seuls certaines sont utilisées dans ce projet afin de fournir un fonctionnement minimaliste.
-
-En particulier, l'envoi d'alertes de vigilance n'est pas encore compris.
 
 Toutes les trames commencent par un quartet d'identification et la plupart incluent une somme de contrôle pour certains éléments.<br/>
 Cette somme ce calcule en additionnant tous les quartets d'une zone donnée à un compteur 8 bits non signé initialisé avec la valeur 7.</br>
@@ -541,3 +540,49 @@ Aucun message n'est associé au niveau jaune, les messages possibles pour les ni
     </tr>
 </table>
 <sup>* Aucun message affiché pour cette valeur</sup>
+
+## Temporalité
+
+En se basant sur les trames capturées et le comportement de stations de test, voici la temporalité des événements nécessaire à un fonctionnement correct, c'est à dire qui permette à la station de se mettre en veille le plus possible et ainsi économiser les piles.
+
+| Temps | Action | Etat de la station |
+|-------|--------|--|
+| t<sub>0</sub>| Installation des piles dans le capteur extérieur | |
+| t<sub>+2s</sub>| Installation des piles dans la station météo ||
+| t<sub>+30s</sub>| Appui long sur Set puis Raz à oui <sup>1</sup> | |
+| t<sub>+40s</sub>|  | Affichage de la température du capteur |
+| t<sub>+42s</sub>|  | Début de la réception, le point clignote |
+| t<sub>+50s</sub>| Appui sur le bouton "Force refresh" |  |
+| t<sub>+51s</sub>| Envoi d'une trame 0xE dite de réveil |  |
+| t<sub>+55s</sub>| Envoi d'une trame de temps (0xF)  | L'indicateur de réception clignote au complet |
+| t<sub>+57s</sub>|  | Affichage de la date, de l'heure et du département |
+| t<sub>+59s</sub>| Envoi d'une trame de prévision longue (0x0)  |  |
+| t<sub>+1min 15s</sub>|  | Affichage des prévisions, l'indicateur de réception est complet et fixe |
+| t<sub>+1min 30s</sub>| Validation du département via les appuis successifs sur la touche SET | Affichage fixe |
+| ... |  |  |
+| M <sup>2</sup> | | |
+| M<sub>+?s<sub> <sup>3</sup> | | La station se met en écoute, L'indicateur de réception clignote au complet <sup>4</sup> |
+| M<sub>+1min</sub> | Envoi d'une trame de temps (0xF) | |
+| M<sub>+1min 4s</sub> | Envoi d'une trame de vigilance (0xE) | |
+| M<sub>+1min 19s</sub> | Envoi d'une trame de vigilance (0xE) | |
+| M<sub>+1min 34s</sub> | Envoi d'une trame de vigilance (0xE) | |
+| ... |  |  |
+| H <sup>5</sup> | | La station se met en écoute, L'indicateur de réception clignote au complet |
+| H<sub>+1min</sub>| Envoi d'une trame 0xE dite de réveil |  |
+| H<sub>+1min 5s</sub>| Envoi d'une trame de temps (0xF)  | L'indicateur de réception clignote au complet |
+| H<sub>+1min 10s</sub>| Envoi d'une trame de prévision longue (0x0)  |  |
+| H<sub>+1min 15s</sub>|  | Mise à jour des prévisions, l'indicateur de réception est complet et fixe |
+
+<br/>
+<sup>1. Uniquement pour les stations le proposant</sup><br/>
+<sup>2. Prochaine minute divisible par 10</sup><br/>
+<sup>3. Nombre de secondes variable, entre 10 et 30</sup><br/>
+<sup>4. Uniquement pour les stations proposant les alertes de vigilance avancées</sup><br/>
+<sup>5. Une des 4 heures possibles: 00, 06, 12 et 18</sup><br/>
+<br/>
+
+Les étapes M et H sont répétées au rythme indiqué pour garantir le bon fonctionnement.
+
+Un décalage d'une minute est mis en place entre les temps M et H avant émission afin de prendre en compte le décalage possible entre l'heure stockée dans la station et l'heure réelle. En effet, lorsque la station reçoit la trame de synchronisation du temps, elle démarre à 0 secondes. Il peut donc y avoir jusqu'à 59 secondes entre le temps du module et de la station.
+
+Le réveil au temps H est immédiat mais le réveil au temps M se fait quand la station affiche le début du prochain message de prévision, ce qui introduit un délai en plus du décalage mentionné précédemment. Aussi, on émet plusieurs fois la trame de vigilance (0xE) pour être sûr que la station la reçoit et se mette bien en veille. Ce comportement a d'ailleurs été également observé dans les captures de trame.
