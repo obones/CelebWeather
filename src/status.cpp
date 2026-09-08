@@ -11,6 +11,9 @@
 #include <HTTPClient.h>
 #include <MemoryStream.h>
 #include <ArduinoJson.h>
+#include <StreamUtils/Streams/ChunkDecodingStream.hpp>
+#include <StreamUtils/Streams/ReadBufferingStream.hpp>
+#include <StreamUtils/Streams/ReadLoggingStream.hpp>
 
 #include "status.h"
 #include "config.h"
@@ -18,6 +21,7 @@
 #include "encoder.h"
 #include "pocsag.h"
 #include "radio.h"
+#include "weatherAlertsMapping.h"
 
 namespace CelebWeather
 {
@@ -172,6 +176,208 @@ namespace CelebWeather
             sendFrame(frame, actualFrameSize);
         }
 
+        bool retrieveWeatherAlerts(uint8_t& level, uint16_t& details)
+        {
+            Serial.println("========== Retrieving weather alerts ===========");
+            level = 0;
+            details = 0;
+
+            if (strlen(Config::WeatherAlertKey) == 0)
+            {
+                Serial.println("No WeatherAlertKey given, cannot retrieve alert details");
+                return false;
+            }
+
+            WiFiClient wifiClient;   // wifi client object
+            wifiClient.stop(); // close connection before sending a new request
+            HTTPClient http;
+            http.setTimeout(15000);
+            http.setConnectTimeout(15000);
+
+            // Ask HTTPClient to collect the Transfer-Encoding header
+            // (by default, it discards all headers)
+            const char* keys[] = {"Transfer-Encoding"};
+            http.collectHeaders(keys, 1);
+
+            String uri = "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
+
+            Serial.printf("Weather alerts Uri: %s\n", uri.c_str());
+
+            http.begin(uri);
+            http.addHeader("apiKey", Config::WeatherAlertKey);
+            int httpCode = http.GET();
+
+            if (httpCode == HTTP_CODE_OK)
+            {
+                // Get the raw and the decoded stream
+                Stream& rawStream = http.getStream();
+                StreamUtils::ChunkDecodingStream decodedStream(http.getStream());
+
+                rawStream.setTimeout(15000);
+
+                // Choose the right stream depending on the Transfer-Encoding header
+                Stream& responseSource =
+                    http.header("Transfer-Encoding") == "chunked" ? decodedStream : rawStream;
+                responseSource.setTimeout(15000);
+
+                // Must buffer because ArduinoJSON reads just slowly enough for the server to abandon the connection 6 times out of 10
+                StreamUtils::ReadBufferingStream bufferedResponse(responseSource, 64);
+                bufferedResponse.setTimeout(15000);
+
+                //StreamUtils::ReadLoggingStream response(bufferedResponse, Serial);
+                Stream& response = bufferedResponse;
+                response.setTimeout(15000);
+
+                Serial.println("Deserializing document");
+
+                // Use the "chunked" read method, meaning that we skip until the "periods" array
+                // Note: do not search for "\"periods\" : [" or "\"periods\": [" as the spaces may not be there
+                if (!response.find("\"periods\"") || !response.find(":") || !response.find("["))
+                {
+                    Serial.println("periods array not found");
+                    return false;
+                }
+
+                // Only keep the strictly required properties to save RAM
+                JsonDocument filter;
+                filter["echeance"] = true;
+                filter["timelaps"]["domain_ids"][0]["domain_id"] = true;
+                filter["timelaps"]["domain_ids"][0]["max_color_id"] = true;
+                filter["timelaps"]["domain_ids"][0]["phenomenon_items"][0]["phenomenon_id"] = true;
+                filter["timelaps"]["domain_ids"][0]["phenomenon_items"][0]["phenomenon_max_color_id"] = true;
+
+                JsonObject currentDayPeriod;
+                JsonDocument doc;
+                do
+                {
+                    DeserializationError error = deserializeJson(doc, response, DeserializationOption::Filter(filter));
+                    if (error)
+                    {
+                        Serial.printf("deserializeJson() returned %s\n", error.c_str());
+                        return false;
+                    }
+
+                    const char* echeance = doc["echeance"];
+                    Serial.printf("Echeance = %s\n", echeance);
+
+                    if (strcmp(echeance, "J") == 0)
+                    {
+                        currentDayPeriod = doc.as<JsonObject>();
+                        break;
+                    }
+                } while (response.findUntil(",", "]"));
+
+                if (!currentDayPeriod)
+                {
+                    Serial.println("No valid period found\n");
+                    return false;
+                }
+
+                JsonObject departmentDomain;
+
+                JsonArray domainIds = currentDayPeriod["timelaps"]["domain_ids"];
+                String expectedDepartment = String(Config::Department);
+                for (JsonVariant domainId : domainIds)
+                {
+                    const char* domainIdValue = domainId["domain_id"];
+                    int compareResult = strcmp(domainIdValue, expectedDepartment.c_str());
+                    //Serial.printf("domain id: %s == %s --> %d\n", domainIdValue, expectedDepartment.c_str(), compareResult);
+
+                    if (compareResult == 0)
+                    {
+                        departmentDomain = domainId;
+                        break;
+                    }
+                }
+
+                if (!departmentDomain)
+                {
+                    Serial.printf("No domain found for department %d\n", Config::Department);
+                    return false;
+                }
+
+                int maxColorId = departmentDomain["max_color_id"];
+
+                switch (maxColorId)
+                {
+                    case 2: // yellow
+                        Serial.println("Yellow alert, ignoring details");
+                        level = 1;
+                        details = 0;
+                        break;
+                    case 3: // orange
+                    case 4: // red
+                        level = maxColorId - 1;
+                        Serial.println("Orange or red alert, reading details");
+
+                        for(JsonVariant phenomenon : departmentDomain["phenomenon_items"].as<JsonArray>())
+                        {
+                            const char* phenomenonIdStr = phenomenon["phenomenon_id"];
+                            int phenomenonId = atoi(phenomenonIdStr);
+                            if (phenomenonId < 1 || phenomenonId > 9)
+                            {
+                                Serial.printf("Unsupported phenomenon id: %s\n", phenomenonIdStr);
+                                continue;
+                            }
+
+                            int phenomenonMaxColorId = phenomenon["phenomenon_max_color_id"];
+                            if (phenomenonMaxColorId >= 2)
+                            {
+                                details |= 1 << (phenomenonId - 1);
+                            }
+                        }
+                        break;
+                    default:
+                        Serial.println("No alerts");
+                }
+            }
+            else
+            {
+                String errorString = http.errorToString(httpCode);
+                Serial.printf("connection failed, error %d: %s\n", httpCode, errorString.c_str());
+                Serial.println(http.getString());
+            }
+
+            http.end();
+
+            Serial.printf("Alerts retrieved, level = %d, details = %03X\n", level, details);
+
+            return true;
+        }
+
+        const int maxWeatherAlertFrameSize = 50;
+        static int actualWeatherAlertFrameSize = 0;
+        static unsigned char weatherAlertFrame[maxWeatherAlertFrameSize] = {};
+        static uint8_t weatherAlertLevel = 0;
+
+        void storeEncodedWeatherAlert(uint8_t level, uint16_t details)
+        {
+            uint8_t weatherAlertDetails = 0;
+            if (details < 256)
+                weatherAlertDetails = WeatherAlertsMapping::mapping[details];
+
+            actualWeatherAlertFrameSize = Encoder::EncodeWeatherAlert(level, weatherAlertDetails, weatherAlertFrame, maxWeatherAlertFrameSize);
+        }
+
+        void transmitWeatherAlert(const unsigned char* frame, int frameSize)
+        {
+            Serial.println("========== Sending WeatherAlert ===========");
+
+            Serial.print("Encoded forecast: ");
+            for(int index = 0; index < frameSize; index++)
+            {
+                Serial.printf("%c", frame[index]);
+            }
+            Serial.println();
+
+            sendFrame(frame, frameSize);
+        }
+
+        void transmitWeatherAlert()
+        {
+            transmitWeatherAlert(weatherAlertFrame, actualWeatherAlertFrameSize);
+        }
+
         void transmitForecast(const unsigned char* frame, int frameSize)
         {
             Serial.println("========== Sending forecast ===========");
@@ -184,16 +390,6 @@ namespace CelebWeather
             Serial.println();
 
             sendFrame(frame, frameSize);
-        }
-
-        void transmitForecast(const openmeteo_sdk::WeatherApiResponse* forecast, int8_t department)
-        {
-            const int maxFrameSize = 100;
-            unsigned char frame[maxFrameSize] = {};
-
-            int actualFrameSize = Encoder::EncodeForecast(forecast, department, frame, maxFrameSize);
-
-            transmitForecast(frame, actualFrameSize);
         }
 
         using ForecastProcessorCallback = void(*)(const openmeteo_sdk::WeatherApiResponse* forecast);
@@ -293,7 +489,7 @@ namespace CelebWeather
 
         void storeEncodedForecast(const openmeteo_sdk::WeatherApiResponse* forecast)
         {
-            actualForecastFrameSize = Encoder::EncodeForecast(forecast, Config::Department, forecastFrame, maxForecastFrameSize);
+            actualForecastFrameSize = Encoder::EncodeForecast(forecast, Config::Department, weatherAlertLevel, forecastFrame, maxForecastFrameSize);
         }
 
         void loopViaMillisRetrieveForecastHourlySendForecastEverySix()
@@ -334,6 +530,13 @@ namespace CelebWeather
                         Serial.printf("\n////////////// Time to retrieve forecast (%d/%02d/%02d %02d:%02d:%02d) //////////////\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
                         previousRetrieveForecastHour = tm.tm_hour;
 
+                        // start with updating the weather alerts, the level is used by storeEncodedForecast right below
+                        uint16_t details;
+                        retrieveWeatherAlerts(weatherAlertLevel, details);
+
+                        // always store, if retrieval failed, it still set level and details value
+                        storeEncodedWeatherAlert(weatherAlertLevel, details);
+
                         retrieveForecast(storeEncodedForecast);
                     }
 
@@ -346,7 +549,7 @@ namespace CelebWeather
                         {
                             Serial.printf("\n////////////// Time to send forecast (%d/%02d/%02d %02d:%02d:%02d) //////////////\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-                            transmitForecast(forecastFrame, actualForecastFrameSize);
+                            transmitWeatherAlert(); // used a "wake-up" for the station
 
                             sendTimeSyncMessage();
 
@@ -358,6 +561,14 @@ namespace CelebWeather
                             Serial.printf("\n////////////// Time to send time sync (%d/%02d/%02d %02d:%02d:%02d) //////////////\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
                             sendTimeSyncMessage();
+
+                            transmitWeatherAlert();
+
+                            delay(15 * 1000);
+                            transmitWeatherAlert();
+
+                            delay(15 * 1000);
+                            transmitWeatherAlert();
                         }
 
                         previousTransmitMinute = tm.tm_min;

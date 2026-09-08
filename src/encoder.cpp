@@ -462,7 +462,7 @@ namespace CelebWeather
             return quartetsPerDay * dayCount + rainProbabilityQuartetsPerDay * dayCount + 2 + 2;
         }
 
-        int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, int8_t department, unsigned char* destFrame, size_t destFrameSize)
+        int EncodeForecast(const openmeteo_sdk::WeatherApiResponse *forecast, int8_t department, uint8_t weatherAlertLevel, unsigned char* destFrame, size_t destFrameSize)
         {
             int destFrameIndex = 0;
 
@@ -475,7 +475,7 @@ namespace CelebWeather
                 genfrm->quartetFrame[0] = 0x0;
                 genfrm->quartetFrame[1] = (department>>4) & 0xF;
                 genfrm->quartetFrame[2] = (department   ) & 0xF;
-                genfrm->quartetFrame[3] = 0x0;  // bit 2 and 3 trigger "Alerte tempête"
+                genfrm->quartetFrame[3] = (weatherAlertLevel & 0b11) << 2;  // bit 2 and 3 trigger "Alerte tempête"
                 genfrm->quartetFrame[4] = 0x4;
 
                 genfrm->quartetFrame[5] = 0x7;
