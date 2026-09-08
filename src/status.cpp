@@ -299,7 +299,6 @@ namespace CelebWeather
         void loopViaMillisRetrieveForecastHourlySendForecastEverySix()
         {
             constexpr int timeCheckPeriodSeconds = 1;
-            constexpr int timeAndForecastMinuteOffset = 1;
 
             static unsigned long previousMillis = 0;
             static int previousRetrieveForecastHour = -1;
@@ -332,6 +331,7 @@ namespace CelebWeather
                     // to avoid overloading the Open Meteo service
                     if ((tm.tm_hour != previousRetrieveForecastHour && tm.tm_min == retrieveForecastMinute) || (actualForecastFrameSize == 0))
                     {
+                        Serial.printf("\n////////////// Time to retrieve forecast (%d/%02d/%02d %02d:%02d:%02d) //////////////\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
                         previousRetrieveForecastHour = tm.tm_hour;
 
                         retrieveForecast(storeEncodedForecast);
@@ -344,6 +344,8 @@ namespace CelebWeather
                         // or immediately in case of forced refresh
                         if (((tm.tm_hour % 6 == 0) && (tm.tm_min == 1)) || localForceRefresh)
                         {
+                            Serial.printf("\n////////////// Time to send forecast (%d/%02d/%02d %02d:%02d:%02d) //////////////\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
                             transmitForecast(forecastFrame, actualForecastFrameSize);
 
                             sendTimeSyncMessage();
@@ -353,6 +355,8 @@ namespace CelebWeather
                         // if not already done just before, send time every 10 minutes at 01, 11, 21, 31...
                         else if (tm.tm_min % 10 == 1)
                         {
+                            Serial.printf("\n////////////// Time to send time sync (%d/%02d/%02d %02d:%02d:%02d) //////////////\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
                             sendTimeSyncMessage();
                         }
 
