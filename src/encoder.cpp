@@ -95,6 +95,18 @@ namespace CelebWeather
 
             tm = *localtime(&t);
 
+            if (tm.tm_sec > 30) // account for transmission drift
+            {
+                tm.tm_min++;
+                if (tm.tm_min == 60)
+                {
+                    tm.tm_min = 0;
+                    tm.tm_hour++;
+                    if (tm.tm_hour == 24)
+                        tm.tm_hour = 0;
+                }
+            }
+
             Serial.printf("Encoding current date/time: %d/%02d/%02d %02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
 
             quartets[0] = 0xF;
