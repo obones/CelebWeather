@@ -489,7 +489,10 @@ namespace CelebWeather
 
         void storeEncodedForecast(const openmeteo_sdk::WeatherApiResponse* forecast)
         {
-            actualForecastFrameSize = Encoder::EncodeForecast(forecast, Config::Department, weatherAlertLevel, forecastFrame, maxForecastFrameSize);
+            actualForecastFrameSize = Encoder::EncodeForecast(
+                forecast, Config::Department,
+                weatherAlertLevel >> 1,  // shift right to ignore value 1 (yellow alert) as it is far too frequent.
+                forecastFrame, maxForecastFrameSize);
         }
 
         void loopViaMillisRetrieveForecastHourlySendForecastEverySix()
