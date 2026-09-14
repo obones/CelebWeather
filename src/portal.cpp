@@ -113,7 +113,7 @@ namespace CelebWeather
         {
             Config::reset();
             Network::reconnectServices();
-            Status::setForceRefresh(true);
+            Status::forceCompleteRefresh();
         }
    }
 }

@@ -495,6 +495,15 @@ namespace CelebWeather
                 forecastFrame, maxForecastFrameSize);
         }
 
+        void forceCompleteRefresh()
+        {
+            Config::Department = 0;
+            actualForecastFrameSize = 0;
+            actualWeatherAlertFrameSize = 0;
+
+            setForceRefresh(true);
+        }
+
         void loopViaMillisRetrieveForecastHourlySendForecastEverySix()
         {
             constexpr int timeCheckPeriodSeconds = 1;
